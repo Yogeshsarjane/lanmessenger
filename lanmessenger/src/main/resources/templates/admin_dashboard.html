@@ -1,0 +1,500 @@
+<!DOCTYPE html>
+<html lang="en" xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Panel - LAN Messenger</title>
+    <style>
+        :root {
+            --background-main: #f0f2f5;
+            --background-panel: #ffffff;
+            --header-background: #ffffff;
+            --border-color: #d1d7e0;
+            --text-primary: #1c1e21;
+            --text-secondary: #606770;
+            --accent-blue: #1877f2;
+            --status-online: #31a24c;
+            --status-offline: #8d949e;
+            --font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", Arial, sans-serif;
+            --sent-bubble-background: #e7f3ff;
+            --received-bubble-background: #f0f0f0;
+        }
+
+        body, html {
+            margin: 0;
+            font-family: var(--font-family);
+            background-color: var(--background-main);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        .app-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100%;
+        }
+
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            height: 60px;
+            background-color: var(--header-background);
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        .app-header-title {
+            font-size: 22px;
+            font-weight: 600;
+        }
+        .logout-button {
+            background: none; border: 1px solid var(--border-color);
+            color: var(--text-secondary); padding: 8px 16px;
+            border-radius: 6px; cursor: pointer; font-weight: 500;
+        }
+        .logout-button:hover { background-color: #e9edef; }
+
+        .admin-layout {
+            display: flex;
+            flex-grow: 1;
+            height: calc(100% - 60px);
+        }
+
+        .user-view-container, .admin-sidebar {
+            width: 50%;
+            display: flex;
+            flex-direction: column;
+            overflow-y: auto;
+        }
+        .user-view-container {
+            border-right: 1px solid var(--border-color);
+            background-color: var(--background-panel);
+        }
+        .admin-sidebar {
+            padding: 20px;
+        }
+
+        .view-tabs { display: flex; border-bottom: 1px solid var(--border-color); }
+        .tab-button {
+            padding: 14px 20px; border: none; background: none; cursor: pointer;
+            font-size: 16px; font-weight: 500; color: var(--text-secondary);
+            border-bottom: 3px solid transparent;
+        }
+        .tab-button.active { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
+        .view-content { flex-grow: 1; display: flex; flex-direction: column; }
+        .chat-area { flex-grow: 1; padding: 20px; list-style-type: none; margin: 0;}
+        .chat-input-form { display: flex; padding: 15px 20px; border-top: 1px solid var(--border-color); }
+        .chat-input {
+            flex-grow: 1; padding: 12px 18px; border: 1px solid #ccd0d5;
+            border-radius: 24px; font-size: 15px;
+        }
+
+        .panel {
+            background-color: var(--background-panel); border: 1px solid var(--border-color);
+            border-radius: 8px; padding: 20px; margin-bottom: 20px;
+        }
+        .panel-header {
+            display: flex; justify-content: space-between; align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px; margin-bottom: 20px;
+        }
+        .panel-header h3 { margin: 0; font-size: 18px; }
+
+        table { width: 100%; border-collapse: collapse; }
+        th, td { text-align: left; padding: 12px 10px; border-bottom: 1px solid #f0f2f5; }
+        tr.clickable-row:hover { background-color: #f8f9fa; cursor: pointer; }
+        th { font-size: 0.9em; color: var(--text-secondary); }
+        .status-dot { height: 10px; width: 10px; border-radius: 50%; margin-right: 8px; display: inline-block; }
+        .status-online { background-color: var(--status-online); }
+        .status-offline { background-color: var(--status-offline); }
+        .remove-button { background-color: #fa3e3e; color: white; border: none; padding: 6px 12px; border-radius: 4px; cursor: pointer; }
+        select { padding: 6px; border-radius: 4px; border-color: var(--border-color); }
+
+        #history-panel-content { min-height: 100px; }
+        .history-tabs { display: flex; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); }
+        .history-tab { padding: 8px 16px; cursor: pointer; color: var(--text-secondary); }
+        .history-tab.active { border-bottom: 2px solid var(--accent-blue); color: var(--accent-blue); font-weight: 500; }
+        .log-list { list-style: none; padding: 0; margin: 0; font-size: 0.9em; max-height: 200px; overflow-y: auto;}
+        .log-item { padding: 8px 4px; border-bottom: 1px solid #f0f2f5; }
+        .log-item .timestamp { color: var(--text-secondary); margin-right: 10px; font-family: monospace; }
+        .log-item .recipient { font-weight: bold; }
+
+        .file-sharing-area { padding: 20px; }
+        .upload-form-group { margin-bottom: 15px; }
+        .upload-form-group label { display: block; margin-bottom: 5px; font-weight: 500; color: var(--text-secondary); }
+        .upload-form-group input[type="file"], .upload-form-group select {
+            width: 100%; padding: 8px; border-radius: 4px; border: 1px solid var(--border-color); box-sizing: border-box;
+        }
+        .upload-button {
+            width: 100%; padding: 10px; border: none; border-radius: 6px;
+            background-color: var(--accent-blue); color: white; font-weight: bold; cursor: pointer;
+        }
+        #upload-status { margin-top: 15px; text-align: center; font-weight: 500; }
+
+        /* --- Polished Chat Bubble Styling --- */
+        .message-item { display: flex; margin-bottom: 10px; }
+        .message-bubble { padding: 10px 15px; border-radius: 18px; max-width: 70%; word-wrap: break-word; }
+        .message-sender { font-weight: bold; font-size: 0.9em; margin-bottom: 4px; color: var(--accent-blue); }
+        .sent { margin-left: auto; background-color: var(--sent-bubble-background); }
+        .received { margin-right: auto; background-color: #f0f0f0; }
+        .event-message { width: 100%; text-align: center; color: var(--text-secondary); font-style: italic; font-size: 0.9em; }
+
+    </style>
+</head>
+<body>
+<div class="app-wrapper">
+    <header class="app-header">
+        <div class="app-header-title">LAN Messenger</div>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="logout-button">Logout</button>
+        </form>
+    </header>
+
+    <div class="admin-layout">
+        <div class="user-view-container">
+            <div class="view-tabs">
+                <button id="chat-tab" class="tab-button active">Group Chat</button>
+                <button id="files-tab" class="tab-button">Private & File Sharing</button>
+            </div>
+            <div id="chat-view" class="view-content">
+                <ul id="message-area" class="chat-area"></ul>
+                <form id="message-form" class="chat-input-form">
+                    <input type="text" id="message-input" class="chat-input" placeholder="Message as admin...">
+                </form>
+            </div>
+            <div id="files-view" class="view-content" style="display: none;">
+                <div class="file-sharing-area">
+                    <h3>Direct File Sharing</h3>
+                    <form id="file-upload-form">
+                        <div class="upload-form-group">
+                            <label for="file-input">Choose File:</label>
+                            <input type="file" id="file-input" required>
+                        </div>
+                        <div class="upload-form-group">
+                            <label for="recipient-select">Select Recipient:</label>
+                            <select id="recipient-select" required>
+                                <option value="">-- Select a user --</option>
+                            </select>
+                        </div>
+                        <button type="submit" class="upload-button">Upload File</button>
+                    </form>
+                    <div id="upload-status"></div>
+                </div>
+            </div>
+        </div>
+
+        <aside class="admin-sidebar">
+            <section class="panel">
+                <div class="panel-header">
+                    <h3>User Management</h3>
+                    <div>
+                        <label for="visibility-toggle" style="font-size: 0.9em; margin-right: 5px;">Visibility:</label>
+                        <select id="visibility-toggle">
+                            <option value="public">Public</option>
+                            <option value="private">Private</option>
+                        </select>
+                    </div>
+                </div>
+                <table>
+                    <thead>
+                    <tr>
+                        <th>Status</th>
+                        <th>Username</th>
+                        <th>IP Address</th>
+                        <th>Action</th>
+                    </tr>
+                    </thead>
+                    <tbody id="user-table-body"></tbody>
+                </table>
+            </section>
+
+            <section class="panel">
+                <div class="panel-header">
+                    <h3 id="history-panel-title">History & Logs</h3>
+                </div>
+                <div id="history-panel-content">
+                    <div class="history-tabs">
+                        <span id="chat-history-tab" class="history-tab active">Chat History</span>
+                        <span id="file-history-tab" class="history-tab">File Logs</span>
+                    </div>
+                    <ul id="log-list" class="log-list">
+                        <p style="color: var(--text-secondary); text-align: center;">Select a user to view their history.</p>
+                    </ul>
+                </div>
+            </section>
+        </aside>
+    </div>
+</div>
+
+<script th:src="@{/js/sockjs.min.js}"></script>
+<script th:src="@{/js/stomp.min.js}"></script>
+
+<script th:inline="javascript">
+    const adminUsername = /*[[${#authentication.principal.username}]]*/ 'admin';
+    const visibilityToggle = document.getElementById('visibility-toggle');
+    let stompClient = null;
+
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.getElementById('message-input');
+    const messageArea = document.getElementById('message-area');
+
+    const historyPanelTitle = document.getElementById('history-panel-title');
+    const chatHistoryTab = document.getElementById('chat-history-tab');
+    const fileHistoryTab = document.getElementById('file-history-tab');
+    const logList = document.getElementById('log-list');
+
+    const chatTab = document.getElementById('chat-tab');
+    const filesTab = document.getElementById('files-tab');
+    const chatView = document.getElementById('chat-view');
+    const filesView = document.getElementById('files-view');
+
+    const fileUploadForm = document.getElementById('file-upload-form');
+    const fileInput = document.getElementById('file-input');
+    const recipientSelect = document.getElementById('recipient-select');
+    const uploadStatus = document.getElementById('upload-status');
+
+    let currentUserChatHistory = [];
+    let currentUserFileHistory = [];
+
+    document.addEventListener('DOMContentLoaded', function() {
+        // --- FIXED: Call the initial fetch ---
+        fetchAndDisplayUsers();
+        connectWebSocket();
+        fetchInitialSettings();
+    });
+
+    visibilityToggle.addEventListener('change', () => updateVisibility(visibilityToggle.value));
+    chatHistoryTab.addEventListener('click', () => {
+        renderChatHistory(currentUserChatHistory);
+        chatHistoryTab.classList.add('active');
+        fileHistoryTab.classList.remove('active');
+    });
+    fileHistoryTab.addEventListener('click', () => {
+        renderFileHistory(currentUserFileHistory);
+        fileHistoryTab.classList.add('active');
+        chatHistoryTab.classList.remove('active');
+    });
+    chatTab.addEventListener('click', () => {
+        chatView.style.display = 'flex';
+        filesView.style.display = 'none';
+        chatTab.classList.add('active');
+        filesTab.classList.remove('active');
+    });
+    filesTab.addEventListener('click', () => {
+        filesView.style.display = 'flex';
+        chatView.style.display = 'none';
+        filesTab.classList.add('active');
+        chatTab.classList.remove('active');
+    });
+    fileUploadForm.addEventListener('submit', async function(event) {
+        event.preventDefault();
+        const file = fileInput.files[0];
+        const recipient = recipientSelect.value;
+        if (!file || !recipient) {
+            uploadStatus.textContent = 'Please select a file and a recipient.';
+            return;
+        }
+        const formData = new FormData();
+        formData.append('file', file);
+        formData.append('recipient', recipient);
+        uploadStatus.textContent = 'Uploading...';
+        try {
+            const response = await fetch('/api/files/upload', { method: 'POST', body: formData });
+            if (response.ok) {
+                uploadStatus.textContent = await response.text();
+            } else { throw new Error('Upload failed'); }
+        } catch (error) {
+            uploadStatus.textContent = 'Error: Could not upload file.';
+        }
+    });
+
+    messageForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const messageContent = messageInput.value.trim();
+        if (messageContent && stompClient) {
+            const chatMessage = {
+                sender: adminUsername,
+                content: messageContent,
+                type: 'CHAT'
+            };
+            stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(chatMessage));
+            messageInput.value = '';
+        }
+    });
+
+    async function fetchAndDisplayUsers() {
+        try {
+            const response = await fetch('/api/admin/users');
+            if (!response.ok) throw new Error('Fetch failed');
+            const users = await response.json();
+            renderUserTable(users);
+        } catch (error) {
+            console.error("Failed to fetch initial user list:", error);
+            document.getElementById('user-table-body').innerHTML = `<tr><td colspan="4" style="color: red;">Failed to load users.</td></tr>`;
+        }
+    }
+
+    async function fetchInitialSettings() {
+        try {
+            const response = await fetch('/api/admin/settings/visibility');
+            if (!response.ok) throw new Error('Fetch failed');
+            const data = await response.json();
+            visibilityToggle.value = data.visibility.toLowerCase();
+        } catch (error) {
+            console.error('Failed to fetch initial settings:', error);
+        }
+    }
+
+    async function updateVisibility(newVisibility) {
+        try {
+            await fetch('/api/admin/settings/visibility', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ visibility: newVisibility })
+            });
+        } catch (error) {
+            console.error('Failed to update visibility:', error);
+        }
+    }
+
+    function connectWebSocket() {
+        const socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, onConnected, () => console.error('WebSocket connection failed.'));
+    }
+
+    function onConnected() {
+        stompClient.subscribe('/topic/admin/users', onUserListReceived);
+        // --- FIXED: Subscribe to the public topic for group chat ---
+        stompClient.subscribe('/topic/public', onPublicMessageReceived);
+        stompClient.send("/app/chat.addUser", {}, JSON.stringify({sender: adminUsername, type: 'JOIN'}));
+    }
+
+    function onUserListReceived(payload) { renderUserTable(JSON.parse(payload.body)); }
+
+    // --- FIXED: Handler for receiving public messages ---
+    function onPublicMessageReceived(payload) {
+        const message = JSON.parse(payload.body);
+        displayMessage(message);
+    }
+
+    // --- FIXED: Polished function to display styled messages ---
+    function displayMessage(message) {
+        const messageItem = document.createElement('li');
+        messageItem.classList.add('message-item');
+
+        if (message.type === 'JOIN' || message.type === 'LEAVE') {
+            messageItem.classList.add('event-message');
+            messageItem.textContent = `${message.sender} has ${message.type === 'JOIN' ? 'joined' : 'left'}.`;
+        } else {
+            const messageBubble = document.createElement('div');
+            messageBubble.classList.add('message-bubble');
+
+            if (message.sender === adminUsername) {
+                messageBubble.classList.add('sent');
+            } else {
+                messageBubble.classList.add('received');
+                const senderElement = document.createElement('div');
+                senderElement.classList.add('message-sender');
+                senderElement.textContent = message.sender;
+                messageBubble.appendChild(senderElement);
+            }
+
+            const contentElement = document.createElement('div');
+            contentElement.textContent = message.content;
+            messageBubble.appendChild(contentElement);
+
+            messageItem.appendChild(messageBubble);
+        }
+        messageArea.appendChild(messageItem);
+        messageArea.scrollTop = messageArea.scrollHeight;
+    }
+
+    function renderUserTable(users) {
+        const tableBody = document.getElementById('user-table-body');
+        tableBody.innerHTML = '';
+        recipientSelect.innerHTML = '<option value="">-- Select a user --</option>';
+        users.forEach(user => {
+            const row = tableBody.insertRow();
+            row.className = 'clickable-row';
+            row.onclick = () => viewUserHistory(user.username);
+            const statusCell = row.insertCell(0);
+            const usernameCell = row.insertCell(1);
+            const ipCell = row.insertCell(2);
+            const actionCell = row.insertCell(3);
+            const statusDot = document.createElement('span');
+            statusDot.className = 'status-dot ' + (user.status === 'Online' ? 'status-online' : 'status-offline');
+            statusCell.appendChild(statusDot);
+            statusCell.append(user.status);
+            usernameCell.textContent = user.username;
+            ipCell.textContent = user.ipAddress;
+            const removeButton = document.createElement('button');
+            removeButton.className = 'remove-button';
+            removeButton.textContent = 'Remove';
+            removeButton.onclick = (e) => {
+                e.stopPropagation();
+                if (confirm(`Are you sure you want to remove ${user.username}?`)) { console.log(`Removing user: ${user.id}`); }
+            };
+            actionCell.appendChild(removeButton);
+
+            const option = document.createElement('option');
+            option.value = user.username;
+            option.textContent = user.username;
+            recipientSelect.appendChild(option);
+        });
+    }
+
+    async function viewUserHistory(username) {
+        historyPanelTitle.innerText = `History & Logs for: ${username}`;
+        logList.innerHTML = '<p>Loading history...</p>';
+        chatHistoryTab.classList.add('active');
+        fileHistoryTab.classList.remove('active');
+
+        try {
+            const [chatRes, fileRes] = await Promise.all([
+                fetch(`/api/admin/history/chat/${username}`),
+                fetch(`/api/admin/history/files/${username}`)
+            ]);
+
+            if (!chatRes.ok || !fileRes.ok) {
+                throw new Error('Failed to fetch history data from server.');
+            }
+
+            currentUserChatHistory = await chatRes.json();
+            currentUserFileHistory = await fileRes.json();
+
+            renderChatHistory(currentUserChatHistory);
+
+        } catch (error) {
+            logList.innerHTML = `<p style="color: red;">${error.message}</p>`;
+            console.error(`Error fetching history for ${username}:`, error);
+        }
+    }
+
+    function renderChatHistory(logs) {
+        if (!logs || logs.length === 0) {
+            logList.innerHTML = '<p>No chat history found for this user.</p>';
+            return;
+        }
+        logList.innerHTML = logs.map(log => {
+            const time = new Date(log.timestamp).toLocaleTimeString();
+            const recipient = log.recipient === 'group' ? 'Group' : log.recipient;
+            return `<li class="log-item"><span class="timestamp">${time}</span> ${log.sender} to <span class="recipient">${recipient}</span>: ${log.content}</li>`;
+        }).join('');
+    }
+
+    function renderFileHistory(logs) {
+        if (!logs || logs.length === 0) {
+            logList.innerHTML = '<p>No file history found for this user.</p>';
+            return;
+        }
+        logList.innerHTML = logs.map(log => {
+            const time = new Date(log.timestamp).toLocaleTimeString();
+            return `<li class="log-item"><span class="timestamp">${time}</span> ${log.sender} sent <span class="recipient">${log.originalFilename}</span> to ${log.recipient}</li>`;
+        }).join('');
+    }
+</script>
+</body>
+</html>
