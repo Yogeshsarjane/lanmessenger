@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/lanmessenger.iml" filepath="$PROJECT_DIR$/.idea/lanmessenger.iml" />
+      <module fileurl="file://$PROJECT_DIR$/lanmessenger/lanmessenger.iml" filepath="$PROJECT_DIR$/lanmessenger/lanmessenger.iml" />
     </modules>
   </component>
 </project>
