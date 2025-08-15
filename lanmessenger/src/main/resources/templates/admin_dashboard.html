@@ -25,14 +25,14 @@
             font-family: var(--font-family);
             background-color: var(--background-main);
             color: var(--text-primary);
-            height: 100vh;
+            height: 100%;
             overflow: hidden;
         }
 
         .app-wrapper {
             display: flex;
             flex-direction: column;
-            height: 100%;
+            height: 100vh;
         }
 
         .app-header {
@@ -115,15 +115,16 @@
         select { padding: 6px; border-radius: 4px; border-color: var(--border-color); }
 
         .table-wrapper {
-            max-height: 400px; /* Or desired height for the scrollable area */
+            max-height: 500px; /* Or desired height for the scrollable area */
             overflow-y: auto;
+
         }
 
         #history-panel-content { min-height: 100px; }
         .history-tabs { display: flex; margin-bottom: 15px; border-bottom: 1px solid var(--border-color); }
         .history-tab { padding: 8px 16px; cursor: pointer; color: var(--text-secondary); }
         .history-tab.active { border-bottom: 2px solid var(--accent-blue); color: var(--accent-blue); font-weight: 500; }
-        .log-list { list-style: none; padding: 0; margin: 0; font-size: 0.9em; max-height: 200px; overflow-y: auto;}
+        .log-list { list-style: none; padding: 0; margin: 0; font-size: 0.9em; max-height: 500px; overflow-y: auto;}
         .log-item { padding: 8px 4px; border-bottom: 1px solid #f0f2f5; }
         .log-item .timestamp { color: var(--text-secondary); margin-right: 10px; font-family: monospace; }
         .log-item .recipient { font-weight: bold; }
