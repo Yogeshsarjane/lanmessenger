@@ -257,6 +257,25 @@
             margin-left: 10px;
         }
 
+        /* Position the tab button to anchor the notification dot */
+        .tab-button {
+            position: relative;
+        }
+
+        /* Style for the unread indicator dot on the main tabs */
+        .tab-button.has-unread::after {
+            content: '';
+            position: absolute;
+            top: 10px; /* Adjust as needed */
+            right: 12px; /* Adjust as needed */
+            height: 9px;
+            width: 9px;
+            background-color: #FFA500;
+            border-radius: 50%;
+            /* Add a subtle border to make it pop against the blue active state */
+            border: 1px solid white;
+        }
+
     </style>
 </head>
 <body>
@@ -424,6 +443,9 @@
         chatHistoryTab.classList.remove('active');
     });
     // --- UPDATED: Tab switching logic now includes Private Chat ---
+    // Get a reference to the faults tab button
+    const faultsTab = document.getElementById('faults-tab');
+
     chatTab.addEventListener('click', () => {
         chatView.style.display = 'flex';
         pchatView.style.display = 'none';
@@ -431,6 +453,9 @@
         chatTab.classList.add('active');
         pchatTab.classList.remove('active');
         filesTab.classList.remove('active');
+        faultsTab.classList.remove('active');
+        // REMOVE INDICATOR
+        chatTab.classList.remove('has-unread');
     });
     pchatTab.addEventListener('click', () => {
         chatView.style.display = 'none';
@@ -439,6 +464,9 @@
         chatTab.classList.remove('active');
         pchatTab.classList.add('active');
         filesTab.classList.remove('active');
+        faultsTab.classList.remove('active');
+        // REMOVE INDICATOR
+        pchatTab.classList.remove('has-unread');
     });
     filesTab.addEventListener('click', () => {
         chatView.style.display = 'none';
@@ -447,6 +475,23 @@
         chatTab.classList.remove('active');
         pchatTab.classList.remove('active');
         filesTab.classList.add('active');
+        faultsTab.classList.remove('active');
+        // REMOVE INDICATOR
+        filesTab.classList.remove('has-unread');
+    });
+    // Add a listener for the faults tab as well
+    faultsTab.addEventListener('click', () => {
+        // NOTE: The faults view doesn't exist yet in the HTML,
+        // so this only handles the tab styling for now.
+        chatView.style.display = 'none';
+        pchatView.style.display = 'none';
+        filesView.style.display = 'none';
+        chatTab.classList.remove('active');
+        pchatTab.classList.remove('active');
+        filesTab.classList.remove('active');
+        faultsTab.classList.add('active');
+        // REMOVE INDICATOR
+        faultsTab.classList.remove('has-unread');
     });
 
     fileUploadForm.addEventListener('submit', async function(event) {
@@ -570,6 +615,12 @@
 
     function onPublicMessageReceived(payload) {
         const message = JSON.parse(payload.body);
+
+        // ADD THIS BLOCK: Check if the chat tab is inactive
+        if (!chatTab.classList.contains('active')) {
+            chatTab.classList.add('has-unread');
+        }
+
         displayMessage(message);
     }
 
@@ -586,10 +637,15 @@
         if (currentPrivateChatTarget === sender) {
             displayPrivateMessage(message);
         } else {
-            // MODIFICATION: Use a more reliable attribute selector
+            // This logic runs when the user is not in the specific private chat
             const userListItem = document.querySelector(`.private-chat-users li[data-username="${sender}"]`);
             if (userListItem) {
                 userListItem.classList.add('unread-indicator');
+            }
+
+            // ADD THIS BLOCK: Check if the main private chat tab is inactive
+            if (!pchatTab.classList.contains('active')) {
+                pchatTab.classList.add('has-unread');
             }
         }
     }
