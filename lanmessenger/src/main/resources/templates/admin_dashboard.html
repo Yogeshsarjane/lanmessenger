@@ -233,6 +233,30 @@
             overflow-y: auto; /* Adds a vertical scrollbar ONLY to this element when needed */
         }
 
+        /* Make the user list item a flex container for easy alignment */
+        .private-chat-users li {
+            display: flex;
+            align-items: center;
+            justify-content: space-between; /* Pushes the dot to the far right */
+            padding: 12px 16px;
+            cursor: pointer;
+            border-radius: 6px;
+            margin-bottom: 4px;
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: background-color 0.2s ease, color 0.2s ease;
+        }
+
+        /* Style for the unread message indicator dot */
+        .private-chat-users li.unread-indicator::after {
+            content: '';
+            height: 9px;
+            width: 9px;
+            background-color: #FFA500;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+
     </style>
 </head>
 <body>
@@ -553,6 +577,7 @@
     function onPrivateMessageReceived(payload) {
         const message = JSON.parse(payload.body);
         const sender = message.sender;
+
         if (!privateChatHistory.has(sender)) {
             privateChatHistory.set(sender, []);
         }
@@ -561,7 +586,11 @@
         if (currentPrivateChatTarget === sender) {
             displayPrivateMessage(message);
         } else {
-            alert(`New private message from ${sender}`);
+            // MODIFICATION: Use a more reliable attribute selector
+            const userListItem = document.querySelector(`.private-chat-users li[data-username="${sender}"]`);
+            if (userListItem) {
+                userListItem.classList.add('unread-indicator');
+            }
         }
     }
 
@@ -596,12 +625,15 @@
         autoScrollView(messageArea);
     }
 
-    // --- NEW: Functions for private chat ---
     function renderPrivateChatUserList(users) {
         privateChatUserList.innerHTML = '';
         const otherUsers = users.filter(user => user.username !== adminUsername && user.status === 'Online');
         otherUsers.forEach(user => {
             const li = document.createElement('li');
+
+            // MODIFICATION: Add a data-username attribute
+            li.dataset.username = user.username;
+
             li.textContent = user.username;
             li.onclick = () => startPrivateChat(user.username);
             privateChatUserList.appendChild(li);
@@ -616,22 +648,19 @@
             privateChatHistory.set(targetUsername, []);
         }
 
-        // --- LOGIC TO HIGHLIGHT THE ACTIVE USER ---
-        // 1. Remove 'active' class from any currently active user
+        // Remove 'active' class from any currently active user
         const currentActive = document.querySelector('.private-chat-users li.active');
         if (currentActive) {
             currentActive.classList.remove('active');
         }
 
-        // 2. Add 'active' class to the newly clicked user
-        // We do this by finding the list item whose text content matches the target username
-        const userListItems = document.querySelectorAll('.private-chat-users li');
-        userListItems.forEach(item => {
-            if (item.textContent === targetUsername) {
-                item.classList.add('active');
-            }
-        });
-        // --- END OF HIGHLIGHT LOGIC ---
+        // MODIFICATION: Find the new item using the attribute selector
+        const newItem = document.querySelector(`.private-chat-users li[data-username="${targetUsername}"]`);
+        if (newItem) {
+            newItem.classList.add('active');
+            // Remove the indicator since the user is now viewing the chat
+            newItem.classList.remove('unread-indicator');
+        }
 
         renderPrivateConversation(targetUsername);
     }
