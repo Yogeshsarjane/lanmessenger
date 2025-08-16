@@ -25,7 +25,7 @@
             font-family: var(--font-family);
             background-color: var(--background-main);
             color: var(--text-primary);
-            height: 100%;
+            height: 100vh;
             overflow: hidden;
         }
 
@@ -148,6 +148,73 @@
         .received { margin-right: auto; background-color: #f0f0f0; }
         .event-message { width: 100%; text-align: center; color: var(--text-secondary); font-style: italic; font-size: 0.9em; }
 
+        /* --- Polished Styling for Private Chat View --- */
+
+        .private-chat-layout {
+            display: flex;
+            flex-grow: 1;
+            overflow: hidden;
+            height: 100%; /* Ensure layout takes full height of its container */
+        }
+
+        /* User List Panel */
+        .private-chat-users {
+            width: 240px; /* A slightly wider panel for better spacing */
+            flex-shrink: 0; /* Prevents the panel from shrinking */
+            border-right: 1px solid var(--border-color);
+            background-color: #f8f9fa; /* Subtle background color */
+            display: flex;
+            flex-direction: column;
+        }
+
+        .private-chat-users h3 {
+            padding: 16px;
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: var(--text-primary);
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .private-chat-users ul {
+            list-style: none;
+            padding: 8px;
+            margin: 0;
+            overflow-y: auto; /* Enables scrolling only when needed */
+        }
+
+        /* Individual User Item */
+        .private-chat-users li {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-radius: 6px;
+            margin-bottom: 4px; /* Space between user items */
+            font-weight: 500;
+            color: var(--text-secondary);
+            transition: background-color 0.2s ease, color 0.2s ease; /* Smooth transition for hover effects */
+        }
+
+        /* Hover effect for user items */
+        .private-chat-users li:hover {
+            background-color: #e9ecef;
+            color: var(--text-primary);
+        }
+
+        /* Active state for the currently selected user */
+        .private-chat-users li.active {
+            background-color: var(--accent-blue);
+            color: #ffffff;
+            font-weight: 600;
+        }
+
+        /* Chat Window Panel */
+        .private-chat-window {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--background-panel); /* White background */
+        }
+
     </style>
 </head>
 <body>
@@ -172,6 +239,22 @@
                 <form id="message-form" class="chat-input-form">
                     <input type="text" id="message-input" class="chat-input" placeholder="Message as admin...">
                 </form>
+            </div>
+            <!-- NEW: Private Chat View -->
+            <div id="pchat-view" class="view-content" style="display: none;">
+                <div class="private-chat-layout">
+                    <div class="private-chat-users">
+                        <h3>Online Users</h3>
+                        <ul id="private-chat-user-list"></ul>
+                    </div>
+                    <div class="private-chat-window">
+                        <h3 id="private-chat-header" style="padding: 10px; margin: 0; border-bottom: 1px solid var(--border-color);">Select a user to chat</h3>
+                        <ul id="private-message-area" class="chat-area"></ul>
+                        <form id="private-message-form" class="chat-input-form">
+                            <input type="text" id="private-message-input" class="chat-input" placeholder="Send a private message...">
+                        </form>
+                    </div>
+                </div>
             </div>
             <div id="files-view" class="view-content" style="display: none;">
                 <div class="file-sharing-area">
@@ -207,17 +290,17 @@
                     </div>
                 </div>
                 <div class="table-wrapper">
-                <table>
-                    <thead>
-                    <tr>
-                        <th>Status</th>
-                        <th>Username</th>
-                        <th>IP Address</th>
-                        <th>Action</th>
-                    </tr>
-                    </thead>
-                    <tbody id="user-table-body"></tbody>
-                </table>
+                    <table>
+                        <thead>
+                        <tr>
+                            <th>Status</th>
+                            <th>Username</th>
+                            <th>IP Address</th>
+                            <th>Action</th>
+                        </tr>
+                        </thead>
+                        <tbody id="user-table-body"></tbody>
+                    </table>
                 </div>
             </section>
 
@@ -266,11 +349,22 @@
     const recipientSelect = document.getElementById('recipient-select');
     const uploadStatus = document.getElementById('upload-status');
 
+    // --- NEW: Private Chat Elements ---
+    const pchatTab = document.getElementById('pchat-tab');
+    const pchatView = document.getElementById('pchat-view');
+    const privateChatUserList = document.getElementById('private-chat-user-list');
+    const privateMessageArea = document.getElementById('private-message-area');
+    const privateMessageForm = document.getElementById('private-message-form');
+    const privateMessageInput = document.getElementById('private-message-input');
+    const privateChatHeader = document.getElementById('private-chat-header');
+
+    let currentPrivateChatTarget = null;
+    const privateChatHistory = new Map();
+
     let currentUserChatHistory = [];
     let currentUserFileHistory = [];
 
     document.addEventListener('DOMContentLoaded', function() {
-        // --- FIXED: Call the initial fetch ---
         fetchAndDisplayUsers();
         connectWebSocket();
         fetchInitialSettings();
@@ -287,18 +381,32 @@
         fileHistoryTab.classList.add('active');
         chatHistoryTab.classList.remove('active');
     });
+    // --- UPDATED: Tab switching logic now includes Private Chat ---
     chatTab.addEventListener('click', () => {
         chatView.style.display = 'flex';
+        pchatView.style.display = 'none';
         filesView.style.display = 'none';
         chatTab.classList.add('active');
+        pchatTab.classList.remove('active');
+        filesTab.classList.remove('active');
+    });
+    pchatTab.addEventListener('click', () => {
+        chatView.style.display = 'none';
+        pchatView.style.display = 'flex';
+        filesView.style.display = 'none';
+        chatTab.classList.remove('active');
+        pchatTab.classList.add('active');
         filesTab.classList.remove('active');
     });
     filesTab.addEventListener('click', () => {
-        filesView.style.display = 'flex';
         chatView.style.display = 'none';
-        filesTab.classList.add('active');
+        pchatView.style.display = 'none';
+        filesView.style.display = 'flex';
         chatTab.classList.remove('active');
+        pchatTab.classList.remove('active');
+        filesTab.classList.add('active');
     });
+
     fileUploadForm.addEventListener('submit', async function(event) {
         event.preventDefault();
         const file = fileInput.files[0];
@@ -335,9 +443,30 @@
         }
     });
 
+    // --- NEW: Private message form submission ---
+    privateMessageForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const messageContent = privateMessageInput.value.trim();
+        if (messageContent && stompClient && currentPrivateChatTarget) {
+            const chatMessage = {
+                sender: adminUsername,
+                recipient: currentPrivateChatTarget,
+                content: messageContent,
+                type: 'PRIVATE'
+            };
+            stompClient.send("/app/chat.privateMessage", {}, JSON.stringify(chatMessage));
+
+            // Add to local history and display
+            privateChatHistory.get(currentPrivateChatTarget).push(chatMessage);
+            displayPrivateMessage(chatMessage);
+            privateMessageInput.value = '';
+        }
+    });
+
     async function fetchAndDisplayUsers() {
         try {
-            const response = await fetch('/api/admin/users');
+            // FIXED: Use full URL to prevent parsing errors
+            const response = await fetch('http://localhost:8080/api/admin/users');
             if (!response.ok) throw new Error('Fetch failed');
             const users = await response.json();
             renderUserTable(users);
@@ -349,7 +478,8 @@
 
     async function fetchInitialSettings() {
         try {
-            const response = await fetch('/api/admin/settings/visibility');
+            // FIXED: Use full URL
+            const response = await fetch('http://localhost:8080/api/admin/settings/visibility');
             if (!response.ok) throw new Error('Fetch failed');
             const data = await response.json();
             visibilityToggle.value = data.visibility.toLowerCase();
@@ -360,7 +490,8 @@
 
     async function updateVisibility(newVisibility) {
         try {
-            await fetch('/api/admin/settings/visibility', {
+            // FIXED: Use full URL
+            await fetch('http://localhost:8080/api/admin/settings/visibility', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ visibility: newVisibility })
@@ -371,27 +502,51 @@
     }
 
     function connectWebSocket() {
-        const socket = new SockJS('/ws');
+        // FIXED: Use full URL
+        const socket = new SockJS('http://localhost:8080/ws');
         stompClient = Stomp.over(socket);
         stompClient.connect({}, onConnected, () => console.error('WebSocket connection failed.'));
     }
 
     function onConnected() {
         stompClient.subscribe('/topic/admin/users', onUserListReceived);
-        // --- FIXED: Subscribe to the public topic for group chat ---
         stompClient.subscribe('/topic/public', onPublicMessageReceived);
+        stompClient.send("/app/chat.addUser", {}, JSON.stringify({sender: adminUsername, type: 'JOIN'}));
+        // --- NEW: Subscribe to admin's private queue ---
+        stompClient.subscribe('/user/' + adminUsername + '/queue/private', onPrivateMessageReceived);
         stompClient.send("/app/chat.addUser", {}, JSON.stringify({sender: adminUsername, type: 'JOIN'}));
     }
 
-    function onUserListReceived(payload) { renderUserTable(JSON.parse(payload.body)); }
+    function onUserListReceived(payload) {
+        // 1. Store the parsed user list in a variable
+        const users = JSON.parse(payload.body);
 
-    // --- FIXED: Handler for receiving public messages ---
+        // 2. Pass that variable to both rendering functions
+        renderUserTable(users);
+        renderPrivateChatUserList(users);
+    }
+
     function onPublicMessageReceived(payload) {
         const message = JSON.parse(payload.body);
         displayMessage(message);
     }
 
-    // --- FIXED: Polished function to display styled messages ---
+    // --- NEW: Handler for incoming private messages ---
+    function onPrivateMessageReceived(payload) {
+        const message = JSON.parse(payload.body);
+        const sender = message.sender;
+        if (!privateChatHistory.has(sender)) {
+            privateChatHistory.set(sender, []);
+        }
+        privateChatHistory.get(sender).push(message);
+
+        if (currentPrivateChatTarget === sender) {
+            displayPrivateMessage(message);
+        } else {
+            alert(`New private message from ${sender}`);
+        }
+    }
+
     function displayMessage(message) {
         const messageItem = document.createElement('li');
         messageItem.classList.add('message-item');
@@ -421,6 +576,82 @@
         }
         messageArea.appendChild(messageItem);
         messageArea.scrollTop = messageArea.scrollHeight;
+    }
+
+    // --- NEW: Functions for private chat ---
+    function renderPrivateChatUserList(users) {
+        privateChatUserList.innerHTML = '';
+        const otherUsers = users.filter(user => user.username !== adminUsername && user.status === 'Online');
+        otherUsers.forEach(user => {
+            const li = document.createElement('li');
+            li.textContent = user.username;
+            li.onclick = () => startPrivateChat(user.username);
+            privateChatUserList.appendChild(li);
+        });
+    }
+
+    function startPrivateChat(targetUsername) {
+        currentPrivateChatTarget = targetUsername;
+        privateChatHeader.textContent = `Private Chat with ${targetUsername}`;
+
+        if (!privateChatHistory.has(targetUsername)) {
+            privateChatHistory.set(targetUsername, []);
+        }
+
+        // --- LOGIC TO HIGHLIGHT THE ACTIVE USER ---
+        // 1. Remove 'active' class from any currently active user
+        const currentActive = document.querySelector('.private-chat-users li.active');
+        if (currentActive) {
+            currentActive.classList.remove('active');
+        }
+
+        // 2. Add 'active' class to the newly clicked user
+        // We do this by finding the list item whose text content matches the target username
+        const userListItems = document.querySelectorAll('.private-chat-users li');
+        userListItems.forEach(item => {
+            if (item.textContent === targetUsername) {
+                item.classList.add('active');
+            }
+        });
+        // --- END OF HIGHLIGHT LOGIC ---
+
+        renderPrivateConversation(targetUsername);
+    }
+
+    function renderPrivateConversation(target) {
+        privateMessageArea.innerHTML = '';
+        const history = privateChatHistory.get(target) || [];
+        history.forEach(msg => displayPrivateMessage(msg));
+    }
+
+    function displayPrivateMessage(message) {
+        const messageItem = document.createElement('li');
+        messageItem.classList.add('message-item');
+
+        const messageBubble = document.createElement('div');
+        messageBubble.classList.add('message-bubble');
+
+        // Differentiate between messages sent by the admin and messages received
+        if (message.sender === adminUsername) {
+            messageBubble.classList.add('sent');
+        } else {
+            messageBubble.classList.add('received');
+
+            // Add the sender's name above the bubble for received messages
+            const senderElement = document.createElement('div');
+            senderElement.classList.add('message-sender');
+            senderElement.textContent = message.sender;
+            messageBubble.appendChild(senderElement);
+        }
+
+        const contentElement = document.createElement('div');
+        contentElement.textContent = message.content;
+        messageBubble.appendChild(contentElement);
+
+        messageItem.appendChild(messageBubble);
+
+        privateMessageArea.appendChild(messageItem);
+        privateMessageArea.scrollTop = privateMessageArea.scrollHeight; // Keep the latest message in view
     }
 
     function renderUserTable(users) {
@@ -464,9 +695,10 @@
         fileHistoryTab.classList.remove('active');
 
         try {
+            // FIXED: Use full URL
             const [chatRes, fileRes] = await Promise.all([
-                fetch(`/api/admin/history/chat/${username}`),
-                fetch(`/api/admin/history/files/${username}`)
+                fetch(`http://localhost:8080/api/admin/history/chat/${username}`),
+                fetch(`http://localhost:8080/api/admin/history/files/${username}`)
             ]);
 
             if (!chatRes.ok || !fileRes.ok) {
