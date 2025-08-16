@@ -22,7 +22,7 @@ public class SecurityConfig {
         http
                 .csrf(AbstractHttpConfigurer::disable) // Keep CSRF disabled for simplicity
                 .authorizeHttpRequests((auth) -> auth
-                        .requestMatchers("/login", "/css/**", "/js/**", "/ws/**").permitAll()
+                        .requestMatchers("/login", "/css/**", "/js/**","/images/**", "/ws/**").permitAll()
                         .requestMatchers("/api/admin/**").hasRole("ADMIN")
                         // --- ADD THIS LINE ---
                         .requestMatchers("/api/files/**").authenticated() // Allow any logged-in user to access file APIs
