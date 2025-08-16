@@ -218,6 +218,21 @@
             background-color: var(--background-panel); /* White background */
         }
 
+        .view-content {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Prevent this container from showing a scrollbar */
+        }
+
+        .chat-area {
+            flex-grow: 1; /* Allows this element to expand and fill the space */
+            padding: 20px;
+            list-style-type: none;
+            margin: 0;
+            overflow-y: auto; /* Adds a vertical scrollbar ONLY to this element when needed */
+        }
+
     </style>
 </head>
 <body>
@@ -578,7 +593,7 @@
             messageItem.appendChild(messageBubble);
         }
         messageArea.appendChild(messageItem);
-        messageArea.scrollTop = messageArea.scrollHeight;
+        autoScrollView(messageArea);
     }
 
     // --- NEW: Functions for private chat ---
@@ -654,7 +669,7 @@
         messageItem.appendChild(messageBubble);
 
         privateMessageArea.appendChild(messageItem);
-        privateMessageArea.scrollTop = privateMessageArea.scrollHeight; // Keep the latest message in view
+        autoScrollView(privateMessageArea);
     }
 
     function renderUserTable(users) {
@@ -740,6 +755,24 @@
             const time = new Date(log.timestamp).toLocaleTimeString();
             return `<li class="log-item"><span class="timestamp">${time}</span> ${log.sender} sent <span class="recipient">${log.originalFilename}</span> to ${log.recipient}</li>`;
         }).join('');
+    }
+
+    /**
+     * Smartly scrolls a chat element to the bottom.
+     * Only scrolls if the user is already near the bottom.
+     * @param {HTMLElement} element The chat area element to scroll.
+     */
+    function autoScrollView(element) {
+        // A threshold in pixels to allow for some space.
+        const scrollThreshold = 100;
+
+        // Check if the user is close to the bottom before the new message was added.
+        const isNearBottom = element.scrollHeight - element.scrollTop - element.clientHeight < scrollThreshold;
+
+        if (isNearBottom) {
+            // Use a smooth scroll for a nicer visual effect.
+            element.scrollTo({ top: element.scrollHeight, behavior: 'smooth' });
+        }
     }
 </script>
 </body>
