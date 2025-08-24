@@ -359,6 +359,62 @@
         .history-item-info p { margin: 0; font-weight: 500; font-size: 0.9em; }
         .history-item-info small { font-size: 0.8em; color: var(--text-secondary); }
 
+        /* --- Incoming Files Panel Styling --- */
+        .incoming-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+
+        .incoming-list li {
+            padding: 12px 10px;
+            border-bottom: 1px solid #f0f2f5;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+        .list-empty {
+            color: var(--text-secondary);
+            text-align: center;
+            padding: 20px;
+            border: none !important;
+        }
+
+        .file-info {
+            display: flex;
+            align-items: center;
+        }
+        .file-icon {
+            font-size: 24px;
+            margin-right: 12px;
+        }
+        .file-details p {
+            margin: 0;
+            font-weight: 500;
+            font-size: 0.9em;
+        }
+        .file-details small {
+            font-size: 0.8em;
+            color: var(--text-secondary);
+        }
+
+        .file-actions button {
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-left: 8px;
+        }
+        .accept-btn {
+            background-color: var(--status-online);
+            color: white;
+        }
+        .reject-btn {
+            background-color: #fa3e3e;
+            color: white;
+        }
+
     </style>
 </head>
 <body>
@@ -431,9 +487,9 @@
                         </div>
                     </div>
                     <aside class="history-panel">
-                        <h3>File History</h3>
-                        <ul id="file-history-list">
-                            <li class="history-empty">No files shared in this session.</li>
+                        <h3>Incoming Files</h3>
+                        <ul id="incoming-files-list" class="incoming-list">
+                            <li id="no-files-prompt" class="list-empty">No incoming files.</li>
                         </ul>
                     </aside>
                 </div>
@@ -530,6 +586,11 @@
     const uploadStatusV2 = document.getElementById('upload-status-v2');
     const fileHistoryList = document.getElementById('file-history-list');
 
+    // --- Add these for the new Incoming Files panel ---
+    const incomingFilesList = document.getElementById('incoming-files-list');
+    const incomingFileCount = document.getElementById('incoming-file-count');
+    const noFilesPrompt = document.getElementById('no-files-prompt');
+
     let selectedFile = null;
     let currentPrivateChatTarget = null;
     const privateChatHistory = new Map();
@@ -582,18 +643,24 @@
     // --- New File Upload Logic ---
     uploadBtn.addEventListener('click', async () => {
         if (!selectedFile || !recipientSelectV2.value) return;
+
         const recipient = recipientSelectV2.value;
         const formData = new FormData();
         formData.append('file', selectedFile);
         formData.append('recipient', recipient);
-        uploadStatusV2.textContent = 'Uploading...';
+
+        uploadStatusV2.textContent = 'Sharing...';
         try {
             const response = await fetch('/api/files/upload', { method: 'POST', body: formData });
-            uploadStatusV2.textContent = response.ok ? `✅ ${await response.text()}` : 'Error: Upload failed';
+            if (response.ok) {
+                uploadStatusV2.textContent = `✅ File sent successfully to ${recipient}!`;
+            } else {
+                throw new Error('Upload failed');
+            }
         } catch (error) {
             uploadStatusV2.textContent = 'Error: Could not upload file.';
         } finally {
-            setTimeout(() => removeFileBtn.click(), 3000);
+            setTimeout(() => removeFileBtn.click(), 3000); // Reset the UI
         }
     });
 
@@ -697,6 +764,10 @@
         stompClient.subscribe('/topic/admin/users', onUserListReceived);
         stompClient.subscribe('/topic/public', onPublicMessageReceived);
         stompClient.subscribe('/user/' + adminUsername + '/queue/private', onPrivateMessageReceived);
+
+        // --- ADD THIS LINE to listen for file notifications ---
+        stompClient.subscribe('/user/' + adminUsername + '/queue/files', onFileReceived);
+
         stompClient.send("/app/chat.addUser", {}, JSON.stringify({ sender: adminUsername, type: 'JOIN' }));
     }
     function onUserListReceived(payload) {
@@ -964,10 +1035,101 @@
         }
     }
 
-    // NOTE: Make sure the functions I marked as "Your existing..." are copied into the final script.
-    // I have omitted their bodies for brevity, but they are in your original file.
-    // The provided code above is a template - you will need to copy the bodies of the omitted functions
-    // from your file into this one.
+    // --- ADD THIS ENTIRE NEW FUNCTION ---
+
+    /**
+     * Handles incoming file notifications from the server.
+     * @param {object} payload The WebSocket message payload.
+     */
+    function onFileReceived(payload) {
+        const fileData = JSON.parse(payload.body);
+
+        // Remove the "No incoming files" prompt if it exists
+        if (noFilesPrompt) {
+            noFilesPrompt.style.display = 'none';
+        }
+
+        // Create the new list item for the incoming file
+        const li = document.createElement('li');
+        li.id = `file-${fileData.fileId}`; // Unique ID for the list item
+
+        const fileIcon = fileData.fileName.match(/\.(jpeg|jpg|png|gif)$/i) ? '🖼️' : '📄';
+
+        li.innerHTML = `
+        <div class="file-info">
+            <span class="file-icon">${fileIcon}</span>
+            <div class="file-details">
+                <p>${fileData.fileName}</p>
+                <small>From: ${fileData.sender}</small>
+            </div>
+        </div>
+        <div class="file-actions">
+            <button class="accept-btn">Accept</button>
+            <button class="reject-btn">Reject</button>
+        </div>
+    `;
+
+        // Add the new item to the top of the list
+        incomingFilesList.prepend(li);
+
+        // Add event listeners for the new buttons
+        li.querySelector('.accept-btn').addEventListener('click', () => handleFileAction(fileData.fileId, 'accept'));
+        li.querySelector('.reject-btn').addEventListener('click', () => handleFileAction(fileData.fileId, 'reject'));
+
+        updateFileCount();
+    }
+
+    /**
+     * Updates the unread file count badge.
+     */
+    function updateFileCount() {
+        const count = incomingFilesList.getElementsByTagName('li').length;
+        if (count > 0) {
+            incomingFileCount.textContent = count;
+            incomingFileCount.style.display = 'inline-block';
+        } else {
+            incomingFileCount.style.display = 'none';
+            if (noFilesPrompt) {
+                noFilesPrompt.style.display = 'block';
+            }
+        }
+    }
+
+    // --- ADD THIS FUNCTION TO HANDLE ACCEPT/REJECT ---
+
+    /**
+     * Handles the admin's decision to accept or reject a file.
+     * @param {string} fileId The unique ID of the file.
+     * @param {string} action The action taken ('accept' or 'reject').
+     */
+    function handleFileAction(fileId, action) {
+        const fileItem = document.getElementById(`file-${fileId}`);
+        if (!fileItem) return;
+
+        // TODO: Send the action to the backend, e.g., via a STOMP message or a fetch request.
+        // For now, we'll just simulate the UI change.
+
+        if (action === 'accept') {
+            // Here you would trigger the actual file download
+            // window.location.href = `/api/files/download/${fileId}`;
+
+            // Update the UI to show it's accepted
+            fileItem.querySelector('.file-actions').innerHTML = `<span style="color: var(--status-online); font-weight: 500;">Accepted</span>`;
+            // Optionally remove it from the list after a delay
+            setTimeout(() => {
+                fileItem.remove();
+                updateFileCount();
+            }, 3000);
+
+        } else { // 'reject'
+            fileItem.querySelector('.file-actions').innerHTML = `<span style="color: #fa3e3e; font-weight: 500;">Rejected</span>`;
+            // Remove it from the list after a delay
+            setTimeout(() => {
+                fileItem.remove();
+                updateFileCount();
+            }, 3000);
+        }
+    }
 
 </script>
 </body>

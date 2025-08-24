@@ -1,351 +1,585 @@
 <!DOCTYPE html>
 <html lang="en" xmlns:th="http://www.thymeleaf.org">
 <head>
-  <meta charset="UTF-8">
-  <title>User Panel-NISHAN SANDESH</title>
-  <style>
-    :root {
-      --light-grey: #f0f2f5;
-      --border-color: #ffffff;
-      --text-primary: #050505;
-      --text-secondary: #2b2d30;
-      --primary-blue: #1877f2;
-      --sent-bubble-background: #e7f3ff;
-      --received-bubble-background: #90f6a3;
-    }
-    body, html { height: 100%; margin: 0; font-family: 'Segoe UI', sans-serif; background-color: var(--light-grey); }
-    .dashboard-container { display: flex; height: 100vh; }
-    .sidebar {
-      width: 280px; background-color: #f8f9fa; border-right: 1px solid var(--border-color);
-      display: flex; flex-direction: column; padding: 20px; box-sizing: border-box;
-    }
-    .main-content {
-      flex-grow: 1; padding: 20px; display: grid;
-      grid-template-columns: 1fr 1fr; grid-template-rows: 1fr 1fr;
-      gap: 20px; overflow-y: auto;
-    }
-    .sidebar h1 { font-size: 24px; margin: 0 0 30px 0; text-align: center; }
-    .sidebar nav a {
-      display: block; padding: 12px 15px; text-decoration: none; color: var(--text-secondary);
-      font-weight: 500; border-radius: 6px; margin-bottom: 8px;
-    }
-    .sidebar nav a.active, .sidebar nav a:hover { background-color: #e7f3ff; color: var(--primary-blue); }
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>User Panel-NISHAN SANDESH</title>
+    <style>
+        :root {
+            --background-main: #f0f2f5;
+            --background-panel: #ffffff;
+            --header-background: #ffffff;
+            --border-color: #d1d7e0;
+            --text-primary: #1c1e21;
+            --text-secondary: #606770;
+            --accent-blue: #1877f2;
+            --status-online: #31a24c;
+            --sent-bubble-background: #e7f3ff;
+            --received-bubble-background: #f0f0f0;
+        }
 
-    .user-profile {
-      margin-top: auto;
-      padding: 15px;
-      border-top: 1px solid var(--border-color);
-    }
-    .user-profile .username {
-      font-weight: 600;
-      font-size: 1.1em;
-      text-align: center;
-      margin-bottom: 10px;
-    }
-    .logout-button {
-      width: 100%; padding: 10px; border: none; border-radius: 6px;
-      background-color: #e4e6eb; font-weight: bold; cursor: pointer;
-    }
+        body, html {
+            margin: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, "Roboto", "Helvetica Neue", Arial, sans-serif;
+            background-color: var(--background-main);
+            color: var(--text-primary);
+            height: 100vh;
+            overflow: hidden;
+        }
 
-    .panel {
-      background-color: #ffffff; border-radius: 8px; padding: 20px;
-      box-shadow: 0 1px 2px rgba(0, 0, 0, 0.1); display: flex; flex-direction: column;
-      overflow: hidden;
-    }
-    .panel h3 { margin-top: 0; border-bottom: 1px solid var(--border-color); padding-bottom: 10px; font-size: 18px; flex-shrink: 0; }
+        .app-wrapper {
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+        }
 
-    /* --- UNIFIED SCROLLING STYLE for all panel content --- */
-    .panel-content {
-      list-style-type: none; padding: 10px; margin: 0;
-      flex-grow: 1;
-      overflow-y: auto;
-    }
+        .app-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0 24px;
+            height: 50px;
+            background-color: var(--header-background);
+            border-bottom: 1px solid var(--border-color);
+            flex-shrink: 0;
+        }
+        .app-header-title { font-size: 22px; font-weight: 500; }
+        .logout-button {
+            background: none; border: 3px solid #1877a0;
+            color: var(--text-secondary); padding: 8px 16px;
+            border-radius: 6px; cursor: pointer; font-weight: 500;
+        }
+        .logout-button:hover { background-color: #e9edef; }
 
-    .user-list { display: none; }
-    .user-list.visible { display: flex; }
-    .user-list ul { padding: 0; } /* Remove default padding */
-    .user-list li { display: flex; align-items: center; padding: 8px 15px; cursor: pointer; border-radius: 6px; }
-    .user-list li:hover { background-color: #f0f2f5; }
-    .status-dot { height: 10px; width: 10px; background-color: #31a24c; border-radius: 50%; margin-right: 10px; }
-    .chat-header { display: flex; justify-content: space-between; align-items: center; }
-    .back-to-group { font-size: 0.8em; color: var(--primary-blue); cursor: pointer; text-decoration: underline; }
-    .message-item { display: flex; margin-bottom: 10px; }
-    .message-bubble { padding: 10px 15px; border-radius: 18px; max-width: 70%; word-wrap: break-word; }
-    .message-sender { font-weight: bold; font-size: 0.9em; margin-bottom: 4px; color: var(--primary-blue); }
-    .sent { margin-left: auto; background-color: var(--sent-bubble-background); }
-    .received { margin-right: auto; background-color: #f0f0f0; border: 1px solid var(--border-color); }
-    .event-message { width: 100%; text-align: center; color: var(--text-secondary); font-style: italic; font-size: 0.9em; }
-  </style>
+        /* MODIFIED: Simplified main layout */
+        .user-layout {
+            display: flex;
+            flex-grow: 1;
+            height: calc(100% - 50px); /* Adjusted height */
+        }
+
+        .main-view-container {
+            width: 100%; /* Takes full width */
+            display: flex;
+            flex-direction: column;
+            background-color: var(--background-panel);
+        }
+
+        /* --- TABS & CONTENT (Reused from Admin) --- */
+        .view-tabs { display: flex; border-bottom: 1px solid var(--border-color); }
+        .tab-button {
+            padding: 14px 20px; border: none; background: none; cursor: pointer;
+            font-size: 16px; font-weight: 500; color: var(--text-secondary);
+            border-bottom: 3px solid transparent; position: relative;
+        }
+        .tab-button.active { color: var(--accent-blue); border-bottom-color: var(--accent-blue); }
+        .view-content {
+            flex-grow: 1; display: flex; flex-direction: column;
+            overflow: hidden;
+        }
+        .chat-area { flex-grow: 1; padding: 20px; list-style-type: none; margin: 0; overflow-y: auto; }
+        .chat-input-form { display: flex; padding: 15px 20px; border-top: 1px solid var(--border-color); }
+        .chat-input {
+            flex-grow: 1; padding: 12px 18px; border: 1px solid #ccd0d5;
+            border-radius: 24px; font-size: 15px;
+        }
+
+        /* Chat Bubbles */
+        .message-item { display: flex; margin-bottom: 10px; }
+        .message-bubble { padding: 10px 15px; border-radius: 18px; max-width: 70%; word-wrap: break-word; }
+        .message-sender { font-weight: bold; font-size: 0.9em; margin-bottom: 4px; color: var(--accent-blue); }
+        .sent { margin-left: auto; background-color: var(--sent-bubble-background); }
+        .received { margin-right: auto; background-color: var(--received-bubble-background); }
+        .event-message { text-align: center; color: var(--text-secondary); font-style: italic; font-size: 0.9em; }
+
+        /* Private Chat */
+        .private-chat-layout { display: flex; flex-grow: 1; overflow: hidden; height: 100%; }
+        .private-chat-users { width: 240px; flex-shrink: 0; border-right: 1px solid var(--border-color); background-color: #f8f9fa; display: flex; flex-direction: column; }
+        .private-chat-users h3 { padding: 16px; margin: 0; font-size: 16px; font-weight: 600; border-bottom: 1px solid var(--border-color); }
+        .private-chat-users ul { list-style: none; padding: 8px; margin: 0; overflow-y: auto; }
+        .private-chat-users li { display: flex; align-items: center; justify-content: space-between; padding: 12px 16px; cursor: pointer; border-radius: 6px; margin-bottom: 4px; font-weight: 500; color: var(--text-secondary); transition: background-color 0.2s ease, color 0.2s ease; }
+        .private-chat-users li:hover { background-color: #e9ecef; color: var(--text-primary); }
+        .private-chat-users li.active { background-color: var(--accent-blue); color: #ffffff; font-weight: 600; }
+        .private-chat-window { flex-grow: 1; display: flex; flex-direction: column; background-color: var(--background-panel); }
+
+        /* File Sharing UI */
+        .file-sharing-layout { display: flex; width: 100%; height: 100%; background-color: var(--background-main); }
+        .upload-panel { width: 65%; padding: 24px; display: flex; flex-direction: column; background-color: var(--background-panel); border-right: 1px solid var(--border-color); }
+        .upload-panel h3 { margin-top: 0; }
+        #drop-zone { flex-grow: 1; border: 2px dashed var(--border-color); border-radius: 8px; display: flex; align-items: center; justify-content: center; text-align: center; color: var(--text-secondary); transition: background-color 0.2s, border-color 0.2s; cursor: pointer; }
+        #drop-zone.drag-over { background-color: var(--sent-bubble-background); border-color: var(--accent-blue); }
+        .drop-zone-icon { font-size: 48px; }
+        .drop-zone-prompt p { margin: 8px 0; font-weight: 500; font-size: 1.1em; }
+        .browse-button { background: none; border: 1px solid #ccd0d5; color: var(--text-primary); padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500; margin-top: 8px; }
+        #file-preview { display: flex; align-items: center; padding: 16px; border: 1px solid var(--border-color); border-radius: 8px; background-color: #f8f9fa; margin: 20px 0; }
+        #preview-thumbnail { width: 50px; height: 50px; display: flex; align-items: center; justify-content: center; font-size: 32px; color: var(--text-secondary); background-color: #e9ecef; border-radius: 4px; margin-right: 16px; flex-shrink: 0; }
+        #preview-thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+        #preview-details { flex-grow: 1; overflow: hidden; }
+        #preview-details p { margin: 0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        #preview-details small { color: var(--text-secondary); }
+        .remove-file-button { background: none; border: none; font-size: 24px; color: var(--text-secondary); cursor: pointer; padding: 0 10px; }
+        .upload-actions { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border-color); }
+        .upload-button { width: 100%; padding: 10px; border: none; border-radius: 6px; background-color: var(--accent-blue); color: white; font-weight: bold; cursor: pointer; }
+        #upload-btn:disabled { background-color: #a0bdf5; cursor: not-allowed; }
+
+        /* Incoming Files Panel */
+        .incoming-files-panel { flex-grow: 1; padding: 24px; overflow-y: auto; }
+        .incoming-files-panel h3 { margin-top: 0; }
+        .incoming-list { list-style: none; padding: 0; margin: 0; }
+        .list-empty { color: var(--text-secondary); text-align: center; padding: 20px; }
+
+        /* --- Notification and File Action Styles --- */
+        .tab-button.has-unread::after {
+            content: '';
+            position: absolute;
+            top: 10px;
+            right: 12px;
+            height: 9px;
+            width: 9px;
+            background-color: #FFA500;
+            border-radius: 50%;
+            border: 1px solid white;
+        }
+
+        .private-chat-users li.unread-indicator::after {
+            content: '';
+            height: 9px;
+            width: 9px;
+            background-color: #FFA500;
+            border-radius: 50%;
+            margin-left: 10px;
+        }
+
+        .file-actions button {
+            border: none;
+            padding: 6px 12px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-weight: 500;
+            margin-left: 8px;
+            color: white;
+        }
+        .accept-btn { background-color: var(--status-online); }
+        .reject-btn { background-color: #fa3e3e; }
+
+    </style>
 </head>
 <body>
-<div class="dashboard-container">
-  <aside class="sidebar">
-    <h1>NISHAN SANDESH</h1>
-    <nav>
-      <a href="#" class="active">Overview</a>
-      <a href="#">Fault Registration</a>
-    </nav>
+<div class="app-wrapper">
+    <header class="app-header">
+        <div class="app-header-title">NISHAN SANDESH</div>
+        <form th:action="@{/logout}" method="post">
+            <button type="submit" class="logout-button">Logout</button>
+        </form>
+    </header>
 
-    <div class="user-profile">
-      <div class="username" th:text="${#authentication.principal.username}"></div>
-      <form class="logout-form" th:action="@{/logout}" method="post">
-        <button type="submit" class="logout-button">Logout</button>
-      </form>
-    </div>
-  </aside>
+    <div class="user-layout">
+        <div class="main-view-container">
+            <div class="view-tabs">
+                <button id="chat-tab" class="tab-button active">Group Chat</button>
+                <button id="pchat-tab" class="tab-button">Private Chat</button>
+                <button id="files-tab" class="tab-button">File Sharing</button>
+            </div>
 
-  <main class="main-content">
-    <div class="panel chat-panel">
-      <div class="chat-header">
-        <h3 id="chat-header-title">Group Chat</h3>
-        <span id="back-to-group" class="back-to-group" style="display: none;">Back to Group Chat</span>
-      </div>
-      <!-- UPDATED: Added panel-content class -->
-      <ul id="message-area" class="panel-content"></ul>
-      <form id="message-form" style="display: flex; margin-top: 15px; flex-shrink: 0;">
-        <input type="text" id="message-input" style="flex-grow: 1; padding: 10px; border-radius: 20px; border: 1px solid #ccc;"/>
-        <button type="submit" style="border-radius: 50%; width: 40px; height: 40px; border: none; background: var(--primary-blue); color: white;">➤</button>
-      </form>
-    </div>
+            <div id="chat-view" class="view-content">
+                <ul id="message-area" class="chat-area"></ul>
+                <form id="message-form" class="chat-input-form">
+                    <input type="text" id="message-input" class="chat-input" placeholder="Type a message...">
+                </form>
+            </div>
 
-    <div class="panel upload-panel">
-      <h3>File Upload</h3>
-      <form id="file-upload-form">
-        <div class="upload-form-group" style="margin-bottom: 15px;"><label>Choose File:</label><input type="file" id="file-input" required></div>
-        <div class="upload-form-group" style="margin-bottom: 15px;"><label>Select Recipient:</label><select id="recipient-select" required><option value="">-- Select a user --</option></select></div>
-        <button type="submit" class="upload-button" style="width: 100%; padding: 10px; border: none; border-radius: 6px; background-color: var(--primary-blue); color: white; font-weight: bold; cursor: pointer;">Upload File</button>
-      </form>
-      <div id="upload-status" style="margin-top: 15px; text-align: center; font-weight: 500;"></div>
+            <div id="pchat-view" class="view-content" style="display: none;">
+                <div class="private-chat-layout">
+                    <div class="private-chat-users">
+                        <h3>Online Users</h3>
+                        <ul id="private-chat-user-list"></ul>
+                    </div>
+                    <div class="private-chat-window">
+                        <h3 id="private-chat-header" style="padding: 10px; margin: 0; border-bottom: 1px solid var(--border-color);">Select a user to chat</h3>
+                        <ul id="private-message-area" class="chat-area"></ul>
+                        <form id="private-message-form" class="chat-input-form">
+                            <input type="text" id="private-message-input" class="chat-input" placeholder="Send a private message...">
+                        </form>
+                    </div>
+                </div>
+            </div>
+            <div id="files-view" class="view-content" style="display: none; padding: 0;">
+                <div class="file-sharing-layout">
+                    <div class="upload-panel">
+                        <h3>Direct File Sharing</h3>
+                        <div id="drop-zone">
+                            <div class="drop-zone-prompt">
+                                <span class="drop-zone-icon">📤</span>
+                                <p>Drag & drop your file here</p>
+                                <small>or</small>
+                                <button type="button" id="browse-btn" class="browse-button">Select a file</button>
+                            </div>
+                            <input type="file" id="file-input-hidden" style="display: none;">
+                        </div>
+                        <div id="file-preview" style="display: none;">
+                            <div id="preview-thumbnail"></div>
+                            <div id="preview-details">
+                                <p id="preview-name"></p>
+                                <small id="preview-size"></small>
+                            </div>
+                            <button id="remove-file-btn" class="remove-file-button">&times;</button>
+                        </div>
+                        <div class="upload-actions">
+                            <div class="upload-form-group">
+                                <label for="recipient-select-v2">Select Recipient:</label>
+                                <select id="recipient-select-v2" required></select>
+                            </div>
+                            <button type="button" id="upload-btn" class="upload-button" disabled>Share File</button>
+                            <div id="upload-status-v2"></div>
+                        </div>
+                    </div>
+                    <aside class="history-panel">
+                        <h3>Incoming Files</h3>
+                        <ul id="incoming-files-list" class="incoming-list">
+                            <li id="no-files-prompt" class="list-empty">No incoming files.</li>
+                        </ul>
+                    </aside>
+                </div>
+            </div>
+        </div>
     </div>
-
-    <div class="panel user-list" id="user-list-panel">
-      <h3>Online Users</h3>
-      <!-- UPDATED: Added panel-content class -->
-      <ul id="online-users-list" class="panel-content"></ul>
-    </div>
-    <div class="panel history-panel">
-      <h3>History</h3>
-      <!-- UPDATED: Added panel-content class -->
-      <ul id="history-list" class="panel-content">
-        <!-- History items will be added here later -->
-      </ul>
-    </div>
-  </main>
 </div>
 
 <script th:src="@{/js/sockjs.min.js}"></script>
 <script th:src="@{/js/stomp.min.js}"></script>
 
 <script th:inline="javascript">
-  const messageForm = document.getElementById('message-form');
-  const messageInput = document.getElementById('message-input');
-  const messageArea = document.getElementById('message-area');
-  const userListPanel = document.getElementById('user-list-panel');
-  const onlineUsersList = document.getElementById('online-users-list');
-  const fileUploadForm = document.getElementById('file-upload-form');
-  const recipientSelect = document.getElementById('recipient-select');
-  const fileInput = document.getElementById('file-input');
-  const uploadStatus = document.getElementById('upload-status');
+    // --- Element References ---
+    // --- CORRECTED Element References ---
+    const username = /*[[${#authentication.principal.username}]]*/ 'user';
+    let stompClient = null;
 
-  const chatHeaderTitle = document.getElementById('chat-header-title');
-  const backToGroupBtn = document.getElementById('back-to-group');
+    const chatTab = document.getElementById('chat-tab');
+    const pchatTab = document.getElementById('pchat-tab');
+    const filesTab = document.getElementById('files-tab');
+    const chatView = document.getElementById('chat-view');
+    const pchatView = document.getElementById('pchat-view');
+    const filesView = document.getElementById('files-view');
 
-  let stompClient = null;
-  const username = /*[[${#authentication.principal.username}]]*/ 'defaultUser';
+    const messageForm = document.getElementById('message-form');
+    const messageInput = document.getElementById('message-input');
+    const messageArea = document.getElementById('message-area');
 
-  const chatHistory = new Map();
-  chatHistory.set('group', []);
+    const privateChatUserList = document.getElementById('private-chat-user-list');
+    const privateMessageArea = document.getElementById('private-message-area');
+    const privateMessageForm = document.getElementById('private-message-form');
+    const privateMessageInput = document.getElementById('private-message-input');
+    const privateChatHeader = document.getElementById('private-chat-header');
 
-  let currentChatTarget = 'group';
+    const dropZone = document.getElementById('drop-zone');
+    const browseBtn = document.getElementById('browse-btn');
+    const fileInputHidden = document.getElementById('file-input-hidden');
+    const filePreview = document.getElementById('file-preview');
+    const previewThumbnail = document.getElementById('preview-thumbnail');
+    const previewName = document.getElementById('preview-name');
+    const previewSize = document.getElementById('preview-size');
+    const removeFileBtn = document.getElementById('remove-file-btn');
+    const recipientSelect = document.getElementById('recipient-select-v2'); // Corrected ID
+    const uploadBtn = document.getElementById('upload-btn');
+    const uploadStatusV2 = document.getElementById('upload-status-v2');
+    const incomingFilesList = document.getElementById('incoming-files-list'); // Corrected ID
+    const noFilesPrompt = document.getElementById('no-files-prompt'); // Added this reference
 
-  function connect() {
-    const socket = new SockJS('/ws');
-    stompClient = Stomp.over(socket);
-    stompClient.connect({}, onConnected, () => console.error('WebSocket connection failed.'));
-  }
+    let selectedFile = null;
+    let currentPrivateChatTarget = null;
+    const chatHistory = new Map();
 
-  function onConnected() {
-    stompClient.subscribe('/topic/users', onUserListReceived);
-    stompClient.subscribe('/topic/public', onPublicMessageReceived);
-    stompClient.subscribe('/user/' + username + '/queue/private', onPrivateMessageReceived);
 
-    stompClient.send("/app/chat.addUser", {}, JSON.stringify({sender: username, type: 'JOIN'}));
-  }
-
-  function onUserListReceived(payload) {
-    const users = JSON.parse(payload.body);
-    const otherUsers = users.filter(user => user.username !== username && user.status === 'Online');
-
-    if (otherUsers.length > 0) {
-      userListPanel.classList.add('visible');
-      onlineUsersList.innerHTML = '';
-      otherUsers.forEach(user => {
-        const userElement = document.createElement('li');
-        userElement.setAttribute('onclick', `startPrivateChat('${user.username}')`);
-        userElement.innerHTML = `<span class="status-dot"></span> ${user.username}`;
-        onlineUsersList.appendChild(userElement);
-      });
-    } else {
-      userListPanel.classList.remove('visible');
-    }
-
-    recipientSelect.innerHTML = '<option value="">-- Select a user --</option>';
-    otherUsers.forEach(user => {
-      const option = document.createElement('option');
-      option.value = user.username;
-      option.textContent = user.username;
-      recipientSelect.appendChild(option);
+    // --- Page Initialization ---
+    document.addEventListener('DOMContentLoaded', function() {
+        connect();
     });
-  }
 
-  function onPublicMessageReceived(payload) {
-    const message = JSON.parse(payload.body);
-    chatHistory.get('group').push(message);
-    if (currentChatTarget === 'group') {
-      displayMessage(message);
+    // --- Tab Switching Logic ---
+       chatTab.addEventListener('click', () => {
+        chatView.style.display = 'flex'; pchatView.style.display = 'none'; filesView.style.display = 'none';
+        chatTab.classList.add('active'); pchatTab.classList.remove('active'); filesTab.classList.remove('active');
+        chatTab.classList.remove('has-unread'); // Add this line
+    });
+    pchatTab.addEventListener('click', () => {
+        chatView.style.display = 'none'; pchatView.style.display = 'flex'; filesView.style.display = 'none';
+        chatTab.classList.remove('active'); pchatTab.classList.add('active'); filesTab.classList.remove('active');
+        pchatTab.classList.remove('has-unread'); // Add this line
+    });
+    filesTab.addEventListener('click', () => {
+        chatView.style.display = 'none'; pchatView.style.display = 'none'; filesView.style.display = 'flex';
+        chatTab.classList.remove('active'); pchatTab.classList.remove('active'); filesTab.classList.add('active');
+        filesTab.classList.remove('has-unread'); // Add this line
+    });
+
+    // --- File Upload Logic ---
+    uploadBtn.addEventListener('click', async () => {
+        if (!selectedFile || !recipientSelect.value) return; // Use the correct recipientSelect
+
+        const recipient = recipientSelect.value; // Get recipient from dropdown
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('recipient', recipient);
+        formData.append('sender', username);
+        uploadStatusV2.textContent = 'Uploading...';
+        try {
+            const response = await fetch('/api/files/upload', { method: 'POST', body: formData });
+            uploadStatusV2.textContent = response.ok ? `✅ ${await response.text()}` : 'Error: Upload failed';
+        } catch (error) {
+            uploadStatusV2.textContent = 'Error: Could not upload file.';
+        } finally {
+            setTimeout(() => removeFileBtn.click(), 3000);
+        }
+    });
+
+    function handleFile(file) {
+        selectedFile = file;
+        dropZone.style.display = 'none';
+        filePreview.style.display = 'flex';
+        uploadBtn.disabled = false; // Enable button once file is selected
+        previewName.textContent = file.name;
+        previewSize.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = () => { previewThumbnail.innerHTML = `<img src="${reader.result}" alt="Preview">`; };
+            reader.readAsDataURL(file);
+        } else {
+            previewThumbnail.innerHTML = '<span>📄</span>';
+        }
     }
-  }
+    removeFileBtn.addEventListener('click', () => {
+        selectedFile = null; fileInputHidden.value = '';
+        filePreview.style.display = 'none'; dropZone.style.display = 'flex';
+        uploadBtn.disabled = true; uploadStatusV2.textContent = '';
+    });
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault(); dropZone.classList.remove('drag-over');
+        if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+    });
+    browseBtn.addEventListener('click', () => fileInputHidden.click());
+    fileInputHidden.addEventListener('change', () => {
+        if (fileInputHidden.files[0]) handleFile(fileInputHidden.files[0]);
+    });
 
-  function onPrivateMessageReceived(payload) {
-    const message = JSON.parse(payload.body);
-    const sender = message.sender;
+    // --- Messaging Forms ---
+    messageForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const messageContent = messageInput.value.trim();
+        if (messageContent && stompClient) {
+            stompClient.send("/app/chat.sendMessage", {}, JSON.stringify({ sender: username, content: messageContent, type: 'CHAT' }));
+            messageInput.value = '';
+        }
+    });
+    privateMessageForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const messageContent = privateMessageInput.value.trim();
+        if (messageContent && stompClient && currentPrivateChatTarget) {
+            const chatMessage = { sender: username, recipient: currentPrivateChatTarget, content: messageContent, type: 'PRIVATE' };
+            stompClient.send("/app/chat.privateMessage", {}, JSON.stringify(chatMessage));
+            if (!chatHistory.has(currentPrivateChatTarget)) chatHistory.set(currentPrivateChatTarget, []);
+            chatHistory.get(currentPrivateChatTarget).push(chatMessage);
+            displayPrivateMessage(chatMessage);
+            privateMessageInput.value = '';
+        }
+    });
 
-    if (!chatHistory.has(sender)) {
-      chatHistory.set(sender, []);
+    // --- WebSocket Connection and Handlers ---
+    function connect() {
+        const socket = new SockJS('/ws');
+        stompClient = Stomp.over(socket);
+        stompClient.connect({}, onConnected, () => console.error('WebSocket connection failed.'));
     }
-    chatHistory.get(sender).push(message);
+    function onConnected() {
+        stompClient.subscribe('/topic/users', onUserListReceived);
+        stompClient.subscribe('/topic/public', onPublicMessageReceived);
+        stompClient.subscribe('/user/' + username + '/queue/private', onPrivateMessageReceived);
+        // --- ADD THIS LINE ---
+        stompClient.subscribe('/user/' + username + '/queue/files', onFileReceived);
 
-    if (currentChatTarget === sender) {
-      displayMessage(message);
-    } else {
-      alert(`You have a new private message from ${sender}`);
+        stompClient.send("/app/chat.addUser", {}, JSON.stringify({ sender: username, type: 'JOIN' }));
     }
-  }
+    function onUserListReceived(payload) {
+        const users = JSON.parse(payload.body);
+        const otherOnlineUsers = users.filter(user => user.username !== username && user.status === 'Online');
 
-  function startPrivateChat(targetUsername) {
-    currentChatTarget = targetUsername;
-    chatHeaderTitle.textContent = `Private Chat with ${targetUsername}`;
-    backToGroupBtn.style.display = 'inline';
+        // Populate the Private Chat user list
+        privateChatUserList.innerHTML = '';
+        otherOnlineUsers.forEach(user => {
+            const li = document.createElement('li');
+            li.dataset.username = user.username;
+            li.textContent = user.username;
+            li.onclick = () => startPrivateChat(user.username);
+            privateChatUserList.appendChild(li);
+        });
 
-    if (!chatHistory.has(targetUsername)) {
-      chatHistory.set(targetUsername, []);
+        // Populate the File Sharing recipient dropdown
+        recipientSelect.innerHTML = '<option value="">-- Select a user --</option>';
+        otherOnlineUsers.forEach(user => {
+            const option = document.createElement('option');
+            option.value = user.username;
+            option.textContent = user.username;
+            recipientSelect.appendChild(option);
+        });
+
+        updateActiveChatUser(); // Update active user highlight
     }
-    renderConversation(targetUsername);
-  }
+    function onPublicMessageReceived(payload) {
+        const message = JSON.parse(payload.body);
+        if (!chatHistory.has('group')) chatHistory.set('group', []);
+        chatHistory.get('group').push(message);
 
-  backToGroupBtn.addEventListener('click', () => {
-    currentChatTarget = 'group';
-    chatHeaderTitle.textContent = 'Group Chat';
-    backToGroupBtn.style.display = 'none';
-    renderConversation('group');
-  });
+        // ADD THIS CHECK
+        if (!chatTab.classList.contains('active')) {
+            chatTab.classList.add('has-unread');
+        }
 
-  messageForm.addEventListener('submit', (e) => {
-    e.preventDefault();
-    const messageContent = messageInput.value.trim();
-    if(messageContent && stompClient) {
-      let chatMessage;
-      if (currentChatTarget === 'group') {
-        chatMessage = { sender: username, content: messageContent, type: 'CHAT' };
-        stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(chatMessage));
-      } else {
-        chatMessage = { sender: username, recipient: currentChatTarget, content: messageContent, type: 'PRIVATE' };
-        stompClient.send("/app/chat.privateMessage", {}, JSON.stringify(chatMessage));
-        chatHistory.get(currentChatTarget).push(chatMessage);
-        displayMessage(chatMessage);
-      }
-      messageInput.value = '';
+        if (currentPrivateChatTarget === null || currentPrivateChatTarget === 'group') {
+            displayMessage(message);
+        }
     }
-  }, true);
+    function onPrivateMessageReceived(payload) {
+        const message = JSON.parse(payload.body);
+        const sender = message.sender;
+        if (!chatHistory.has(sender)) chatHistory.set(sender, []);
+        chatHistory.get(sender).push(message);
 
-  function displayMessage(message) {
-    const messageItem = createMessageElement(message);
-    messageArea.appendChild(messageItem);
-    messageArea.scrollTop = messageArea.scrollHeight;
-  }
+        if (currentPrivateChatTarget === sender) {
+            displayPrivateMessage(message);
+        } else {
+            // --- REPLACE THE ALERT WITH THIS LOGIC ---
+            // Add indicator to the specific user in the list
+            const userListItem = document.querySelector(`.private-chat-users li[data-username="${sender}"]`);
+            if (userListItem) {
+                userListItem.classList.add('unread-indicator');
+            }
 
-  function renderConversation(target) {
-    messageArea.innerHTML = '';
-    const history = chatHistory.get(target);
-    if (history) {
-      history.forEach(message => {
-        const messageItem = createMessageElement(message);
-        messageArea.appendChild(messageItem);
-      });
-    }
-    messageArea.scrollTop = messageArea.scrollHeight;
-  }
-
-  function createMessageElement(message) {
-    const messageItem = document.createElement('li');
-    messageItem.classList.add('message-item');
-
-    if (message.type === 'JOIN' || message.type === 'LEAVE') {
-      messageItem.classList.add('event-message');
-      messageItem.textContent = `${message.sender} has ${message.type === 'JOIN' ? 'joined' : 'left'}.`;
-    } else {
-      const messageBubble = document.createElement('div');
-      messageBubble.classList.add('message-bubble');
-
-      if (message.sender === username) {
-        messageBubble.classList.add('sent');
-      } else {
-        messageBubble.classList.add('received');
-        const senderElement = document.createElement('div');
-        senderElement.classList.add('message-sender');
-        senderElement.textContent = message.sender;
-        messageBubble.appendChild(senderElement);
-      }
-
-      const contentElement = document.createElement('div');
-      contentElement.textContent = message.content;
-      messageBubble.appendChild(contentElement);
-
-      messageItem.appendChild(messageBubble);
-    }
-    return messageItem;
-  }
-
-  connect();
-
-  fileUploadForm.addEventListener('submit', async function(event) {
-    event.preventDefault();
-    const file = fileInput.files[0];
-    const recipient = recipientSelect.value;
-
-    if (!file || !recipient) {
-      uploadStatus.textContent = 'Please select a file and a recipient.';
-      uploadStatus.style.color = 'red';
-      return;
+            // Add indicator to the main "Private Chat" tab if it's not active
+            if (!pchatTab.classList.contains('active')) {
+                pchatTab.classList.add('has-unread');
+            }
+        }
     }
 
-    const formData = new FormData();
-    formData.append('file', file);
-    formData.append('recipient', recipient);
+    // --- Rendering and Display Functions ---
+    function displayMessage(message) { /* Function to display group message */ }
+    function displayPrivateMessage(message) { /* Function to display private message */ }
 
-    uploadStatus.textContent = 'Uploading...';
-    uploadStatus.style.color = 'blue';
+    function startPrivateChat(targetUsername) {
+        currentPrivateChatTarget = targetUsername;
+        privateChatHeader.textContent = `Private Chat with ${targetUsername}`;
+        if (!chatHistory.has(targetUsername)) chatHistory.set(targetUsername, []);
+        renderPrivateConversation(targetUsername);
+        updateActiveChatUser();
 
-    try {
-      const response = await fetch('/api/files/upload', {
-        method: 'POST',
-        body: formData
-      });
-
-      if (response.ok) {
-        const result = await response.text();
-        uploadStatus.textContent = result;
-        uploadStatus.style.color = 'green';
-        fileInput.value = '';
-      } else {
-        throw new Error('Upload failed with status: ' + response.status);
-      }
-    } catch (error) {
-      uploadStatus.textContent = 'Error: Could not upload file.';
-      uploadStatus.style.color = 'red';
-      console.error('File upload error:', error);
+        // --- ADD THIS LOGIC TO REMOVE THE INDICATOR ---
+        const userListItem = document.querySelector(`.private-chat-users li[data-username="${targetUsername}"]`);
+        if (userListItem) {
+            userListItem.classList.remove('unread-indicator');
+        }
     }
-  });
+
+    function renderPrivateConversation(target) {
+        privateMessageArea.innerHTML = '';
+        const history = chatHistory.get(target) || [];
+        history.forEach(msg => displayPrivateMessage(msg));
+    }
+
+    function updateActiveChatUser() {
+        document.querySelectorAll('#private-chat-user-list li').forEach(li => {
+            li.classList.toggle('active', li.dataset.username === currentPrivateChatTarget);
+        });
+    }
+
+    // Helper to create message elements (Used by both group and private chat)
+    function createMessageElement(message) {
+        const messageItem = document.createElement('li');
+        messageItem.classList.add('message-item');
+        const messageBubble = document.createElement('div');
+        messageBubble.classList.add('message-bubble');
+
+        if (message.type === 'JOIN' || message.type === 'LEAVE') {
+            messageItem.classList.add('event-message');
+            messageItem.textContent = `${message.sender} has ${message.type === 'JOIN' ? 'joined' : 'left'}.`;
+        } else {
+            if (message.sender === username) {
+                messageBubble.classList.add('sent');
+            } else {
+                messageBubble.classList.add('received');
+                const senderElement = document.createElement('div');
+                senderElement.classList.add('message-sender');
+                senderElement.textContent = message.sender;
+                messageBubble.appendChild(senderElement);
+            }
+            const contentElement = document.createElement('div');
+            contentElement.textContent = message.content;
+            messageBubble.appendChild(contentElement);
+            messageItem.appendChild(messageBubble);
+        }
+        return messageItem;
+    }
+
+    // Wire up display functions
+    displayMessage = (message) => {
+        const el = createMessageElement(message);
+        messageArea.appendChild(el);
+        messageArea.scrollTop = messageArea.scrollHeight;
+    };
+    displayPrivateMessage = (message) => {
+        const el = createMessageElement(message);
+        privateMessageArea.appendChild(el);
+        privateMessageArea.scrollTop = privateMessageArea.scrollHeight;
+    };
+
+    function onFileReceived(payload) {
+        const fileData = JSON.parse(payload.body);
+
+        if (!filesTab.classList.contains('active')) {
+            filesTab.classList.add('has-unread');
+        }
+
+        // Hide the "No incoming files" prompt
+        if(noFilesPrompt) noFilesPrompt.style.display = 'none';
+
+        const li = document.createElement('li');
+        li.id = `file-${fileData.fileId}`;
+        li.innerHTML = `
+            <div class="history-text" style="display: flex; align-items: center;">
+                <span class="history-icon" style="font-size: 1.5em; margin-right: 10px;">📥</span>
+                <div>
+                    File from <strong>${fileData.sender}</strong>: ${fileData.fileName}
+                    <small style="display: block;">Awaiting your response...</small>
+                </div>
+            </div>
+            <div class="file-actions" style="margin-left: auto;">
+                <button class="accept-btn">Accept</button>
+                <button class="reject-btn">Reject</button>
+            </div>
+        `;
+        incomingFilesList.prepend(li); // Use the correct list
+
+        li.querySelector('.accept-btn').addEventListener('click', () => handleFileAction(fileData.fileId, 'accept'));
+        li.querySelector('.reject-btn').addEventListener('click', () => handleFileAction(fileData.fileId, 'reject'));
+    }
+
+    function handleFileAction(fileId, action) {
+        const fileItem = document.getElementById(`file-${fileId}`);
+        if (!fileItem) return;
+
+        if (action === 'accept') {
+            // Trigger the browser to download the file from the backend
+            window.location.href = `/api/files/download/${fileId}`;
+            fileItem.innerHTML = `<span class="history-icon">✅</span> <div class="history-text"><strong>File accepted</strong> and is downloading.</div>`;
+        } else { // 'reject'
+            // TODO: Optionally notify backend of rejection
+            fileItem.innerHTML = `<span class="history-icon">❌</span> <div class="history-text"><strong>File rejected</strong> from sender.</div>`;
+        }
+
+        // Remove the item from history after a few seconds
+        setTimeout(() => fileItem.remove(), 5000);
+    }
+
 </script>
 </body>
 </html>
