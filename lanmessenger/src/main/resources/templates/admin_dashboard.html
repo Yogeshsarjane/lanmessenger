@@ -276,6 +276,89 @@
             border: 1px solid white;
         }
 
+        /* --- NEW: Polished File Sharing UI --- */
+        .file-sharing-layout {
+            display: flex;
+            width: 100%;
+            height: 100%;
+            background-color: var(--background-main);
+        }
+        .upload-panel {
+            width: 55%;
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            background-color: var(--background-panel);
+            border-right: 1px solid var(--border-color);
+        }
+        .upload-panel h3 { margin-top: 0; }
+        #drop-zone {
+            flex-grow: 1;
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: var(--text-secondary);
+            transition: background-color 0.2s, border-color 0.2s;
+            cursor: pointer;
+        }
+        #drop-zone.drag-over {
+            background-color: var(--sent-bubble-background);
+            border-color: var(--accent-blue);
+        }
+        .drop-zone-icon { font-size: 48px; }
+        .drop-zone-prompt p { margin: 8px 0; font-weight: 500; font-size: 1.1em; }
+        .browse-button {
+            background: none; border: 1px solid #ccd0d5; color: var(--text-primary);
+            padding: 8px 16px; border-radius: 6px; cursor: pointer; font-weight: 500;
+            margin-top: 8px;
+        }
+        #file-preview {
+            display: flex;
+            align-items: center;
+            padding: 16px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: #f8f9fa;
+            margin: 20px 0;
+        }
+        #preview-thumbnail {
+            width: 50px; height: 50px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 32px; color: var(--text-secondary);
+            background-color: #e9ecef; border-radius: 4px;
+            margin-right: 16px; flex-shrink: 0;
+        }
+        #preview-thumbnail img { width: 100%; height: 100%; object-fit: cover; }
+        #preview-details { flex-grow: 1; overflow: hidden; }
+        #preview-details p { margin: 0; font-weight: 500; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;}
+        #preview-details small { color: var(--text-secondary); }
+        .remove-file-button {
+            background: none; border: none; font-size: 24px;
+            color: var(--text-secondary); cursor: pointer; padding: 0 10px;
+        }
+        .upload-actions { margin-top: auto; padding-top: 20px; border-top: 1px solid var(--border-color); }
+        #upload-btn:disabled { background-color: #a0bdf5; cursor: not-allowed; }
+        .history-panel {
+            flex-grow: 1;
+            padding: 24px;
+            overflow-y: auto;
+        }
+        .history-panel h3 { margin-top: 0; }
+        #file-history-list { list-style: none; padding: 0; margin: 0; }
+        #file-history-list li {
+            background-color: var(--background-panel);
+            border: 1px solid var(--border-color);
+            padding: 12px; border-radius: 6px;
+            margin-bottom: 12px; display: flex; align-items: center;
+        }
+        .history-empty { border: none !important; color: var(--text-secondary); text-align: center; justify-content: center; }
+        .history-item-icon { font-size: 24px; margin-right: 12px; }
+        .history-item-info p { margin: 0; font-weight: 500; font-size: 0.9em; }
+        .history-item-info small { font-size: 0.8em; color: var(--text-secondary); }
+
     </style>
 </head>
 <body>
@@ -317,23 +400,42 @@
                     </div>
                 </div>
             </div>
-            <div id="files-view" class="view-content" style="display: none;">
-                <div class="file-sharing-area">
-                    <h3>Direct File Sharing</h3>
-                    <form id="file-upload-form">
-                        <div class="upload-form-group">
-                            <label for="file-input">Choose File:</label>
-                            <input type="file" id="file-input" required>
+            <div id="files-view" class="view-content" style="display: none; padding: 0;">
+                <div class="file-sharing-layout">
+                    <div class="upload-panel">
+                        <h3>Direct File Sharing</h3>
+                        <div id="drop-zone">
+                            <div class="drop-zone-prompt">
+                                <span class="drop-zone-icon">📤</span>
+                                <p>Drag & drop your file here</p>
+                                <small>or</small>
+                                <button type="button" id="browse-btn" class="browse-button">Select a file</button>
+                            </div>
+                            <input type="file" id="file-input-hidden" style="display: none;">
                         </div>
-                        <div class="upload-form-group">
-                            <label for="recipient-select">Select Recipient:</label>
-                            <select id="recipient-select" required>
-                                <option value="">-- Select a user --</option>
-                            </select>
+                        <div id="file-preview" style="display: none;">
+                            <div id="preview-thumbnail"></div>
+                            <div id="preview-details">
+                                <p id="preview-name"></p>
+                                <small id="preview-size"></small>
+                            </div>
+                            <button id="remove-file-btn" class="remove-file-button">&times;</button>
                         </div>
-                        <button type="submit" class="upload-button">Upload File</button>
-                    </form>
-                    <div id="upload-status"></div>
+                        <div class="upload-actions">
+                            <div class="upload-form-group">
+                                <label for="recipient-select-v2">Select Recipient:</label>
+                                <select id="recipient-select-v2" required></select>
+                            </div>
+                            <button type="button" id="upload-btn" class="upload-button" disabled>Share File</button>
+                            <div id="upload-status-v2"></div>
+                        </div>
+                    </div>
+                    <aside class="history-panel">
+                        <h3>File History</h3>
+                        <ul id="file-history-list">
+                            <li class="history-empty">No files shared in this session.</li>
+                        </ul>
+                    </aside>
                 </div>
             </div>
         </div>
@@ -387,6 +489,9 @@
 <script th:src="@{/js/stomp.min.js}"></script>
 
 <script th:inline="javascript">
+    // --- START: CORRECTED & COMPLETE SCRIPT ---
+
+    // --- Element References ---
     const adminUsername = /*[[${#authentication.principal.username}]]*/ 'admin';
     const visibilityToggle = document.getElementById('visibility-toggle');
     let stompClient = null;
@@ -394,23 +499,14 @@
     const messageForm = document.getElementById('message-form');
     const messageInput = document.getElementById('message-input');
     const messageArea = document.getElementById('message-area');
-
     const historyPanelTitle = document.getElementById('history-panel-title');
     const chatHistoryTab = document.getElementById('chat-history-tab');
     const fileHistoryTab = document.getElementById('file-history-tab');
     const logList = document.getElementById('log-list');
-
     const chatTab = document.getElementById('chat-tab');
     const filesTab = document.getElementById('files-tab');
     const chatView = document.getElementById('chat-view');
     const filesView = document.getElementById('files-view');
-
-    const fileUploadForm = document.getElementById('file-upload-form');
-    const fileInput = document.getElementById('file-input');
-    const recipientSelect = document.getElementById('recipient-select');
-    const uploadStatus = document.getElementById('upload-status');
-
-    // --- NEW: Private Chat Elements ---
     const pchatTab = document.getElementById('pchat-tab');
     const pchatView = document.getElementById('pchat-view');
     const privateChatUserList = document.getElementById('private-chat-user-list');
@@ -418,19 +514,37 @@
     const privateMessageForm = document.getElementById('private-message-form');
     const privateMessageInput = document.getElementById('private-message-input');
     const privateChatHeader = document.getElementById('private-chat-header');
+    const faultsTab = document.getElementById('faults-tab');
 
+    // --- New File Sharing UI Elements ---
+    const dropZone = document.getElementById('drop-zone');
+    const browseBtn = document.getElementById('browse-btn');
+    const fileInputHidden = document.getElementById('file-input-hidden');
+    const filePreview = document.getElementById('file-preview');
+    const previewThumbnail = document.getElementById('preview-thumbnail');
+    const previewName = document.getElementById('preview-name');
+    const previewSize = document.getElementById('preview-size');
+    const removeFileBtn = document.getElementById('remove-file-btn');
+    const recipientSelectV2 = document.getElementById('recipient-select-v2');
+    const uploadBtn = document.getElementById('upload-btn');
+    const uploadStatusV2 = document.getElementById('upload-status-v2');
+    const fileHistoryList = document.getElementById('file-history-list');
+
+    let selectedFile = null;
     let currentPrivateChatTarget = null;
     const privateChatHistory = new Map();
-
     let currentUserChatHistory = [];
     let currentUserFileHistory = [];
 
+
+    // --- Page Initialization ---
     document.addEventListener('DOMContentLoaded', function() {
         fetchAndDisplayUsers();
         connectWebSocket();
         fetchInitialSettings();
     });
 
+    // --- Event Listeners ---
     visibilityToggle.addEventListener('change', () => updateVisibility(visibilityToggle.value));
     chatHistoryTab.addEventListener('click', () => {
         renderChatHistory(currentUserChatHistory);
@@ -442,214 +556,176 @@
         fileHistoryTab.classList.add('active');
         chatHistoryTab.classList.remove('active');
     });
-    // --- UPDATED: Tab switching logic now includes Private Chat ---
-    // Get a reference to the faults tab button
-    const faultsTab = document.getElementById('faults-tab');
 
+    // --- Tab Switching Logic ---
     chatTab.addEventListener('click', () => {
-        chatView.style.display = 'flex';
-        pchatView.style.display = 'none';
-        filesView.style.display = 'none';
-        chatTab.classList.add('active');
-        pchatTab.classList.remove('active');
-        filesTab.classList.remove('active');
-        faultsTab.classList.remove('active');
-        // REMOVE INDICATOR
+        chatView.style.display = 'flex'; pchatView.style.display = 'none'; filesView.style.display = 'none';
+        chatTab.classList.add('active'); pchatTab.classList.remove('active'); filesTab.classList.remove('active'); faultsTab.classList.remove('active');
         chatTab.classList.remove('has-unread');
     });
     pchatTab.addEventListener('click', () => {
-        chatView.style.display = 'none';
-        pchatView.style.display = 'flex';
-        filesView.style.display = 'none';
-        chatTab.classList.remove('active');
-        pchatTab.classList.add('active');
-        filesTab.classList.remove('active');
-        faultsTab.classList.remove('active');
-        // REMOVE INDICATOR
+        chatView.style.display = 'none'; pchatView.style.display = 'flex'; filesView.style.display = 'none';
+        chatTab.classList.remove('active'); pchatTab.classList.add('active'); filesTab.classList.remove('active'); faultsTab.classList.remove('active');
         pchatTab.classList.remove('has-unread');
     });
     filesTab.addEventListener('click', () => {
-        chatView.style.display = 'none';
-        pchatView.style.display = 'none';
-        filesView.style.display = 'flex';
-        chatTab.classList.remove('active');
-        pchatTab.classList.remove('active');
-        filesTab.classList.add('active');
-        faultsTab.classList.remove('active');
-        // REMOVE INDICATOR
+        chatView.style.display = 'none'; pchatView.style.display = 'none'; filesView.style.display = 'flex';
+        chatTab.classList.remove('active'); pchatTab.classList.remove('active'); filesTab.classList.add('active'); faultsTab.classList.remove('active');
         filesTab.classList.remove('has-unread');
     });
-    // Add a listener for the faults tab as well
     faultsTab.addEventListener('click', () => {
-        // NOTE: The faults view doesn't exist yet in the HTML,
-        // so this only handles the tab styling for now.
-        chatView.style.display = 'none';
-        pchatView.style.display = 'none';
-        filesView.style.display = 'none';
-        chatTab.classList.remove('active');
-        pchatTab.classList.remove('active');
-        filesTab.classList.remove('active');
-        faultsTab.classList.add('active');
-        // REMOVE INDICATOR
+        chatView.style.display = 'none'; pchatView.style.display = 'none'; filesView.style.display = 'none';
+        chatTab.classList.remove('active'); pchatTab.classList.remove('active'); filesTab.classList.remove('active'); faultsTab.classList.add('active');
         faultsTab.classList.remove('has-unread');
     });
 
-    fileUploadForm.addEventListener('submit', async function(event) {
-        event.preventDefault();
-        const file = fileInput.files[0];
-        const recipient = recipientSelect.value;
-        if (!file || !recipient) {
-            uploadStatus.textContent = 'Please select a file and a recipient.';
-            return;
-        }
+    // --- New File Upload Logic ---
+    uploadBtn.addEventListener('click', async () => {
+        if (!selectedFile || !recipientSelectV2.value) return;
+        const recipient = recipientSelectV2.value;
         const formData = new FormData();
-        formData.append('file', file);
+        formData.append('file', selectedFile);
         formData.append('recipient', recipient);
-        uploadStatus.textContent = 'Uploading...';
+        uploadStatusV2.textContent = 'Uploading...';
         try {
             const response = await fetch('/api/files/upload', { method: 'POST', body: formData });
-            if (response.ok) {
-                uploadStatus.textContent = await response.text();
-            } else { throw new Error('Upload failed'); }
+            uploadStatusV2.textContent = response.ok ? `✅ ${await response.text()}` : 'Error: Upload failed';
         } catch (error) {
-            uploadStatus.textContent = 'Error: Could not upload file.';
+            uploadStatusV2.textContent = 'Error: Could not upload file.';
+        } finally {
+            setTimeout(() => removeFileBtn.click(), 3000);
         }
     });
 
+    // --- New File UI Functions ---
+    function handleFile(file) {
+        selectedFile = file;
+        dropZone.style.display = 'none';
+        filePreview.style.display = 'flex';
+        uploadBtn.disabled = recipientSelectV2.value === '';
+        previewName.textContent = file.name;
+        previewSize.textContent = `${(file.size / 1024 / 1024).toFixed(2)} MB`;
+        if (file.type.startsWith('image/')) {
+            const reader = new FileReader();
+            reader.onload = () => { previewThumbnail.innerHTML = `<img src="${reader.result}" alt="Preview">`; };
+            reader.readAsDataURL(file);
+        } else {
+            previewThumbnail.innerHTML = '<span>📄</span>';
+        }
+    }
+    removeFileBtn.addEventListener('click', () => {
+        selectedFile = null; fileInputHidden.value = '';
+        filePreview.style.display = 'none'; dropZone.style.display = 'flex';
+        uploadBtn.disabled = true; uploadStatusV2.textContent = '';
+    });
+    recipientSelectV2.addEventListener('change', () => {
+        if (selectedFile) uploadBtn.disabled = recipientSelectV2.value === '';
+    });
+    dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('drag-over'); });
+    dropZone.addEventListener('dragleave', () => dropZone.classList.remove('drag-over'));
+    dropZone.addEventListener('drop', (e) => {
+        e.preventDefault(); dropZone.classList.remove('drag-over');
+        if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]);
+    });
+    browseBtn.addEventListener('click', () => fileInputHidden.click());
+    fileInputHidden.addEventListener('change', () => {
+        if (fileInputHidden.files[0]) handleFile(fileInputHidden.files[0]);
+    });
+
+
+    // --- Messaging Forms ---
     messageForm.addEventListener('submit', (event) => {
         event.preventDefault();
         const messageContent = messageInput.value.trim();
         if (messageContent && stompClient) {
-            const chatMessage = {
-                sender: adminUsername,
-                content: messageContent,
-                type: 'CHAT'
-            };
-            stompClient.send("/app/chat.sendMessage", {}, JSON.stringify(chatMessage));
+            stompClient.send("/app/chat.sendMessage", {}, JSON.stringify({ sender: adminUsername, content: messageContent, type: 'CHAT' }));
             messageInput.value = '';
         }
     });
-
-    // --- NEW: Private message form submission ---
     privateMessageForm.addEventListener('submit', (event) => {
         event.preventDefault();
         const messageContent = privateMessageInput.value.trim();
         if (messageContent && stompClient && currentPrivateChatTarget) {
-            const chatMessage = {
-                sender: adminUsername,
-                recipient: currentPrivateChatTarget,
-                content: messageContent,
-                type: 'PRIVATE'
-            };
+            const chatMessage = { sender: adminUsername, recipient: currentPrivateChatTarget, content: messageContent, type: 'PRIVATE' };
             stompClient.send("/app/chat.privateMessage", {}, JSON.stringify(chatMessage));
-
-            // Add to local history and display
+            if (!privateChatHistory.has(currentPrivateChatTarget)) privateChatHistory.set(currentPrivateChatTarget, []);
             privateChatHistory.get(currentPrivateChatTarget).push(chatMessage);
             displayPrivateMessage(chatMessage);
             privateMessageInput.value = '';
         }
     });
 
+
+    // --- Data Fetching and Initial Setup ---
     async function fetchAndDisplayUsers() {
         try {
-            // FIXED: Use full URL to prevent parsing errors
             const response = await fetch('http://localhost:8080/api/admin/users');
             if (!response.ok) throw new Error('Fetch failed');
             const users = await response.json();
             renderUserTable(users);
+            renderPrivateChatUserList(users);
+            updateUserLists(users);
         } catch (error) {
             console.error("Failed to fetch initial user list:", error);
-            document.getElementById('user-table-body').innerHTML = `<tr><td colspan="4" style="color: red;">Failed to load users.</td></tr>`;
+            const tableBody = document.getElementById('user-table-body');
+            if(tableBody) tableBody.innerHTML = `<tr><td colspan="4" style="color: red;">Failed to load users.</td></tr>`;
         }
     }
-
     async function fetchInitialSettings() {
         try {
-            // FIXED: Use full URL
             const response = await fetch('http://localhost:8080/api/admin/settings/visibility');
             if (!response.ok) throw new Error('Fetch failed');
-            const data = await response.json();
-            visibilityToggle.value = data.visibility.toLowerCase();
-        } catch (error) {
-            console.error('Failed to fetch initial settings:', error);
-        }
+            visibilityToggle.value = (await response.json()).visibility.toLowerCase();
+        } catch (error) { console.error('Failed to fetch initial settings:', error); }
     }
-
     async function updateVisibility(newVisibility) {
         try {
-            // FIXED: Use full URL
             await fetch('http://localhost:8080/api/admin/settings/visibility', {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ visibility: newVisibility })
+                method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ visibility: newVisibility })
             });
-        } catch (error) {
-            console.error('Failed to update visibility:', error);
-        }
+        } catch (error) { console.error('Failed to update visibility:', error); }
     }
 
+
+    // --- WebSocket Connection and Handlers ---
     function connectWebSocket() {
-        // FIXED: Use full URL
         const socket = new SockJS('http://localhost:8080/ws');
         stompClient = Stomp.over(socket);
         stompClient.connect({}, onConnected, () => console.error('WebSocket connection failed.'));
     }
-
     function onConnected() {
         stompClient.subscribe('/topic/admin/users', onUserListReceived);
         stompClient.subscribe('/topic/public', onPublicMessageReceived);
-        stompClient.send("/app/chat.addUser", {}, JSON.stringify({sender: adminUsername, type: 'JOIN'}));
-        // --- NEW: Subscribe to admin's private queue ---
         stompClient.subscribe('/user/' + adminUsername + '/queue/private', onPrivateMessageReceived);
-        stompClient.send("/app/chat.addUser", {}, JSON.stringify({sender: adminUsername, type: 'JOIN'}));
+        stompClient.send("/app/chat.addUser", {}, JSON.stringify({ sender: adminUsername, type: 'JOIN' }));
     }
-
     function onUserListReceived(payload) {
-        // 1. Store the parsed user list in a variable
         const users = JSON.parse(payload.body);
-
-        // 2. Pass that variable to both rendering functions
         renderUserTable(users);
         renderPrivateChatUserList(users);
+        updateUserLists(users);
     }
-
     function onPublicMessageReceived(payload) {
         const message = JSON.parse(payload.body);
-
-        // ADD THIS BLOCK: Check if the chat tab is inactive
-        if (!chatTab.classList.contains('active')) {
-            chatTab.classList.add('has-unread');
-        }
-
+        if (!chatTab.classList.contains('active')) chatTab.classList.add('has-unread');
         displayMessage(message);
     }
-
-    // --- NEW: Handler for incoming private messages ---
     function onPrivateMessageReceived(payload) {
         const message = JSON.parse(payload.body);
         const sender = message.sender;
-
-        if (!privateChatHistory.has(sender)) {
-            privateChatHistory.set(sender, []);
-        }
+        if (!privateChatHistory.has(sender)) privateChatHistory.set(sender, []);
         privateChatHistory.get(sender).push(message);
-
         if (currentPrivateChatTarget === sender) {
             displayPrivateMessage(message);
         } else {
-            // This logic runs when the user is not in the specific private chat
             const userListItem = document.querySelector(`.private-chat-users li[data-username="${sender}"]`);
-            if (userListItem) {
-                userListItem.classList.add('unread-indicator');
-            }
-
-            // ADD THIS BLOCK: Check if the main private chat tab is inactive
-            if (!pchatTab.classList.contains('active')) {
-                pchatTab.classList.add('has-unread');
-            }
+            if (userListItem) userListItem.classList.add('unread-indicator');
+            if (!pchatTab.classList.contains('active')) pchatTab.classList.add('has-unread');
         }
     }
 
+
+    // --- Rendering and Display Functions ---
     function displayMessage(message) {
         const messageItem = document.createElement('li');
         messageItem.classList.add('message-item');
@@ -679,52 +755,6 @@
         }
         messageArea.appendChild(messageItem);
         autoScrollView(messageArea);
-    }
-
-    function renderPrivateChatUserList(users) {
-        privateChatUserList.innerHTML = '';
-        const otherUsers = users.filter(user => user.username !== adminUsername && user.status === 'Online');
-        otherUsers.forEach(user => {
-            const li = document.createElement('li');
-
-            // MODIFICATION: Add a data-username attribute
-            li.dataset.username = user.username;
-
-            li.textContent = user.username;
-            li.onclick = () => startPrivateChat(user.username);
-            privateChatUserList.appendChild(li);
-        });
-    }
-
-    function startPrivateChat(targetUsername) {
-        currentPrivateChatTarget = targetUsername;
-        privateChatHeader.textContent = `Private Chat with ${targetUsername}`;
-
-        if (!privateChatHistory.has(targetUsername)) {
-            privateChatHistory.set(targetUsername, []);
-        }
-
-        // Remove 'active' class from any currently active user
-        const currentActive = document.querySelector('.private-chat-users li.active');
-        if (currentActive) {
-            currentActive.classList.remove('active');
-        }
-
-        // MODIFICATION: Find the new item using the attribute selector
-        const newItem = document.querySelector(`.private-chat-users li[data-username="${targetUsername}"]`);
-        if (newItem) {
-            newItem.classList.add('active');
-            // Remove the indicator since the user is now viewing the chat
-            newItem.classList.remove('unread-indicator');
-        }
-
-        renderPrivateConversation(targetUsername);
-    }
-
-    function renderPrivateConversation(target) {
-        privateMessageArea.innerHTML = '';
-        const history = privateChatHistory.get(target) || [];
-        history.forEach(msg => displayPrivateMessage(msg));
     }
 
     function displayPrivateMessage(message) {
@@ -757,14 +787,24 @@
         autoScrollView(privateMessageArea);
     }
 
+    // REPLACED with the two functions below
+    // function renderUserTable(users) { /* ... */ }
+    // function renderPrivateChatUserList(users) { /* ... */ }
+
+    // --- ROBUST & CORRECTED RENDER FUNCTIONS ---
     function renderUserTable(users) {
         const tableBody = document.getElementById('user-table-body');
+        // This check prevents the crash.
+        if (!tableBody) {
+            console.error('CRITICAL: Element with ID "user-table-body" was not found.');
+            return;
+        }
         tableBody.innerHTML = '';
-        recipientSelect.innerHTML = '<option value="">-- Select a user --</option>';
         users.forEach(user => {
             const row = tableBody.insertRow();
             row.className = 'clickable-row';
             row.onclick = () => viewUserHistory(user.username);
+            // ... (rest of your row creation logic)
             const statusCell = row.insertCell(0);
             const usernameCell = row.insertCell(1);
             const ipCell = row.insertCell(2);
@@ -783,12 +823,70 @@
                 if (confirm(`Are you sure you want to remove ${user.username}?`)) { console.log(`Removing user: ${user.id}`); }
             };
             actionCell.appendChild(removeButton);
+        });
+    }
 
+    function renderPrivateChatUserList(users) {
+        privateChatUserList.innerHTML = '';
+        const otherUsers = users.filter(user => user.username !== adminUsername && user.status === 'Online');
+        otherUsers.forEach(user => {
+            const li = document.createElement('li');
+            li.dataset.username = user.username;
+            li.textContent = user.username;
+            li.onclick = () => startPrivateChat(user.username);
+            privateChatUserList.appendChild(li);
+        });
+    }
+
+    // This is a new helper function
+    function updateUserLists(users) {
+        const newRecipientSelect = document.getElementById('recipient-select-v2');
+        if (!newRecipientSelect) {
+            return;
+        }
+
+        // --- THIS IS THE MODIFIED LINE ---
+        // It now filters for users who are NOT the admin AND are 'Online'
+        const onlineUsers = users.filter(u => u.username !== adminUsername && u.status === 'Online');
+
+        newRecipientSelect.innerHTML = '<option value="">-- Select a user --</option>';
+        onlineUsers.forEach(user => {
             const option = document.createElement('option');
             option.value = user.username;
             option.textContent = user.username;
-            recipientSelect.appendChild(option);
+            newRecipientSelect.appendChild(option);
         });
+    }
+
+    function startPrivateChat(targetUsername) {
+        currentPrivateChatTarget = targetUsername;
+        privateChatHeader.textContent = `Private Chat with ${targetUsername}`;
+
+        if (!privateChatHistory.has(targetUsername)) {
+            privateChatHistory.set(targetUsername, []);
+        }
+
+        // Remove 'active' class from any currently active user
+        const currentActive = document.querySelector('.private-chat-users li.active');
+        if (currentActive) {
+            currentActive.classList.remove('active');
+        }
+
+        // MODIFICATION: Find the new item using the attribute selector
+        const newItem = document.querySelector(`.private-chat-users li[data-username="${targetUsername}"]`);
+        if (newItem) {
+            newItem.classList.add('active');
+            // Remove the indicator since the user is now viewing the chat
+            newItem.classList.remove('unread-indicator');
+        }
+
+        renderPrivateConversation(targetUsername);
+    }
+
+    function renderPrivateConversation(target) {
+        privateMessageArea.innerHTML = '';
+        const history = privateChatHistory.get(target) || [];
+        history.forEach(msg => displayPrivateMessage(msg));
     }
 
     async function viewUserHistory(username) {
@@ -842,11 +940,17 @@
         }).join('');
     }
 
-    /**
-     * Smartly scrolls a chat element to the bottom.
-     * Only scrolls if the user is already near the bottom.
-     * @param {HTMLElement} element The chat area element to scroll.
-     */
+    function renderFileHistory(logs) {
+        if (!logs || logs.length === 0) {
+            logList.innerHTML = '<p>No file history found for this user.</p>';
+            return;
+        }
+        logList.innerHTML = logs.map(log => {
+            const time = new Date(log.timestamp).toLocaleTimeString();
+            return `<li class="log-item"><span class="timestamp">${time}</span> ${log.sender} sent <span class="recipient">${log.originalFilename}</span> to ${log.recipient}</li>`;
+        }).join('');
+    }
+
     function autoScrollView(element) {
         // A threshold in pixels to allow for some space.
         const scrollThreshold = 100;
@@ -859,6 +963,12 @@
             element.scrollTo({ top: element.scrollHeight, behavior: 'smooth' });
         }
     }
+
+    // NOTE: Make sure the functions I marked as "Your existing..." are copied into the final script.
+    // I have omitted their bodies for brevity, but they are in your original file.
+    // The provided code above is a template - you will need to copy the bodies of the omitted functions
+    // from your file into this one.
+
 </script>
 </body>
 </html>
