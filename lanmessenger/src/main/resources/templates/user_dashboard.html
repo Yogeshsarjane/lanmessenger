@@ -244,6 +244,213 @@
             font-weight: bold;
             font-size: 18px;
         }
+        /* --- Professional Fault Registration UI Styles --- */
+        .view-wrapper {
+            padding: 24px;
+            height: 100%;
+            box-sizing: border-box;
+            overflow-y: auto;
+        }
+        .fault-panel {
+            max-width: 800px;
+            margin: 0 auto;
+            background-color: var(--background-panel);
+            border: 1px solid var(--border-color);
+            border-radius: var(--panel-radius);
+            box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+        }
+        .fault-panel-header {
+            padding: 20px 24px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .fault-panel-header h3 {
+            margin: 0 0 4px 0;
+            font-size: 20px;
+            color: var(--text-primary);
+        }
+        .fault-panel-header p {
+            margin: 0;
+            color: var(--text-secondary);
+        }
+        .fault-form-body {
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        .form-row {
+            display: flex;
+            gap: 20px;
+        }
+        .form-group {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+        }
+        .form-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            font-size: 15px;
+        }
+        .helper-text {
+            font-size: 13px;
+            color: var(--text-secondary);
+            margin-top: 6px;
+        }
+        .priority-options {
+            display: flex;
+            align-items: center;
+            gap: 15px;
+            height: 45px;
+        }
+        .file-attachment-group {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+        .browse-btn {
+            padding: 8px 16px;
+            border: 1px solid #ccd0d5;
+            background-color: #f0f2f5;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 500;
+        }
+        .filename-display {
+            font-style: italic;
+            color: var(--text-secondary);
+        }
+        .submission-area {
+            padding-top: 20px;
+            margin-top: 10px;
+            border-top: 1px solid var(--border-color);
+        }
+        .submit-btn {
+            width: 180px; height: 40px; border: none;
+            border-radius: 6px; background-color: var(--accent-blue);
+            color: white; font-weight: bold; font-size: 15px;
+            cursor: pointer; display: flex; align-items: center; justify-content: center;
+        }
+        .submit-btn:disabled {
+            background-color: #a0bdf5; cursor: not-allowed;
+        }
+        .spinner {
+            border: 3px solid rgba(255,255,255,0.3);
+            border-top-color: #fff;
+            border-radius: 50%;
+            width: 18px; height: 18px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+
+        /* Alert Box Styles */
+        .alert {
+            margin-top: 15px;
+            padding: 12px 18px;
+            border-radius: 6px;
+            font-weight: 500;
+            display: none; /* Hidden by default */
+        }
+        .alert-success {
+            background-color: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+            display: block; /* Show on success */
+        }
+        .alert-danger {
+            background-color: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+            display: block; /* Show on error */
+        }
+        /* --- Professional File Sharing UI Styles --- */
+        .file-sharing-layout {
+            display: flex;
+            gap: 20px;
+            height: 100%;
+            box-sizing: border-box;
+        }
+        .upload-panel {
+            flex: 0 0 45%; /* Don't grow, base width 45% */
+            background-color: var(--background-panel);
+            border-radius: var(--panel-radius);
+            padding: 24px;
+            display: flex;
+            flex-direction: column;
+        }
+        .history-panel-styled {
+            flex: 1; /* Grow to fill remaining space */
+            background-color: var(--background-panel);
+            border-radius: var(--panel-radius);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden; /* Important for scrolling */
+        }
+        .drop-zone-styled {
+            flex-grow: 1;
+            border: 2px dashed var(--border-color);
+            border-radius: 6px;
+            display: flex; align-items: center; justify-content: center;
+            text-align: center; color: var(--text-secondary);
+        }
+        .file-preview-styled {
+            display: flex; align-items: center; gap: 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 6px; padding: 15px;
+            margin-top: 20px;
+        }
+        .preview-details-styled { flex-grow: 1; }
+        .progress-bar-container {
+            height: 8px; width: 100%;
+            background-color: #e9ecef;
+            border-radius: 4px;
+            margin-top: 8px;
+            overflow: hidden;
+        }
+        .progress-bar-fill {
+            width: 0%; height: 100%;
+            background-color: var(--accent-blue);
+            transition: width 0.2s ease-out;
+        }
+        .remove-file-btn-styled {
+            background: none; border: none; font-size: 24px;
+            cursor: pointer; padding: 0 10px; color: var(--text-secondary);
+        }
+        .history-tabs {
+            display: flex;
+            border-bottom: 1px solid var(--border-color);
+            padding: 0 24px;
+            flex-shrink: 0;
+        }
+        .history-tab-btn {
+            padding: 14px 16px; border: none; background: none; cursor: pointer;
+            font-size: 16px; font-weight: 500; color: var(--text-secondary);
+            border-bottom: 3px solid transparent;
+        }
+        .history-tab-btn.active {
+            color: var(--accent-blue);
+            border-bottom-color: var(--accent-blue);
+        }
+        .history-content {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 15px;
+        }
+        .history-list-styled {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+        }
+        .history-list-styled li {
+            padding: 12px;
+            border-bottom: 1px solid var(--border-color);
+        }
+        .history-empty-prompt {
+            text-align: center;
+            color: var(--text-secondary);
+            padding: 40px;
+            border: none !important;
+        }
 
     </style>
 </head>
@@ -262,6 +469,10 @@
             <a href="#" id="nav-files" class="nav-link">
                 <svg fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><path d="M16.5 6v11.5c0 2.21-1.79 4-4 4s-4-1.79-4-4V5c0-1.38 1.12-2.5 2.5-2.5s2.5 1.12 2.5 2.5v10.5c0 .55-.45 1-1 1s-1-.45-1-1V6H10v9.5c0 1.38 1.12 2.5 2.5 2.5s2.5-1.12 2.5-2.5V5c0-2.21-1.79-4-4-4S7 2.79 7 5v12.5c0 2.21 1.79 4 4 4s4-1.79 4-4V6h-1.5z"></path></svg>
                 <span>File Sharing</span>
+            </a>
+            <a href="#" id="nav-faults" class="nav-link">
+                <svg fill="currentColor" viewBox="0 0 24 24" width="24" height="24"><path d="M11 15h2v2h-2v-2zm0-8h2v6h-2V7zm.99-5C6.47 2 2 6.48 2 12s4.47 10 9.99 10C17.52 22 22 17.52 22 12S17.52 2 11.99 2zM12 20c-4.42 0-8-3.58-8-8s3.58-8 8-8 8 3.58 8 8-3.58 8-8 8z"></path></svg>
+                <span>Register Fault</span>
             </a>
         </nav>
         <div class="user-profile">
@@ -305,24 +516,30 @@
         </div>
 
         <div id="file-sharing-view" class="file-sharing-layout" style="display: none;">
+
             <div class="upload-panel">
-                <h3>Direct File Sharing</h3>
-                <div id="drop-zone">
+                <h3>Send a File</h3>
+                <div id="drop-zone" class="drop-zone-styled">
                     <div class="drop-zone-prompt">
                         <span style="font-size: 48px;">📤</span>
                         <p>Drag & drop file</p><small>or</small>
-                        <button type="button" id="browse-btn" style="margin-top: 8px; background: none; border: 1px solid #ccd0d5; padding: 8px 16px; border-radius: 6px; cursor: pointer;">Select File</button>
+                        <button type="button" id="browse-btn" class="browse-btn-styled">Select File</button>
                     </div>
                 </div>
                 <input type="file" id="file-input-hidden" style="display: none;">
-                <div id="file-preview" style="display: none;">
-                    <div id="preview-thumbnail"></div>
-                    <div id="preview-details">
+
+                <div id="file-preview" class="file-preview-styled" style="display: none;">
+                    <div id="preview-thumbnail" class="preview-thumbnail-styled"></div>
+                    <div id="preview-details" class="preview-details-styled">
                         <p id="preview-name"></p>
                         <small id="preview-size"></small>
+                        <div class="progress-bar-container" style="display: none;">
+                            <div id="progress-bar" class="progress-bar-fill"></div>
+                        </div>
                     </div>
-                    <button id="remove-file-btn">&times;</button>
+                    <button id="remove-file-btn" class="remove-file-btn-styled">&times;</button>
                 </div>
+
                 <div class="upload-actions">
                     <label for="recipient-select">Select Recipient:</label>
                     <select id="recipient-select"></select>
@@ -330,12 +547,82 @@
                     <div id="upload-status"></div>
                 </div>
             </div>
-            <aside class="incoming-files-panel">
-                <h3>Incoming Files</h3>
-                <ul id="incoming-files-list">
-                    <li id="no-files-prompt">No incoming files.</li>
-                </ul>
+
+            <aside class="history-panel-styled">
+                <div class="history-tabs">
+                    <button id="incoming-tab" class="history-tab-btn active">Incoming</button>
+                    <button id="sent-tab" class="history-tab-btn">Sent</button>
+                </div>
+                <div class="history-content">
+                    <ul id="incoming-files-list" class="history-list-styled">
+                        <li id="no-files-prompt" class="history-empty-prompt">No incoming files.</li>
+                    </ul>
+                    <ul id="sent-files-list" class="history-list-styled" style="display: none;">
+                        <li id="no-sent-files-prompt" class="history-empty-prompt">You haven't sent any files.</li>
+                    </ul>
+                </div>
             </aside>
+        </div>
+        <div id="fault-registration-view" class="view-wrapper" style="display: none;">
+            <div class="fault-panel">
+                <div class="fault-panel-header">
+                    <h3>Report a Technical Issue</h3>
+                    <p>Your detailed report helps us resolve issues faster. Thank you!</p>
+                </div>
+
+                <form id="fault-form" class="fault-form-body">
+                    <div class="form-group">
+                        <label for="fault-subject">Subject</label>
+                        <input type="text" id="fault-subject" class="chat-input" placeholder="e.g., Unable to send files to users" required>
+                        <small class="helper-text">Provide a brief, clear summary of the issue.</small>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label for="fault-category">Fault Category</label>
+                            <select id="fault-category" class="chat-input" required>
+                                <option value="" disabled selected>Select a category...</option>
+                                <option value="CHAT_ISSUE">Chat Issue</option>
+                                <option value="FILE_SHARING">File Sharing Problem</option>
+                                <option value="UI_BUG">UI / Visual Glitch</option>
+                                <option value="CONNECTION">Connection Problem</option>
+                                <option value="OTHER">Other</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label>Priority Level</label>
+                            <div class="priority-options">
+                                <label><input type="radio" name="priority" value="LOW" checked> Low</label>
+                                <label><input type="radio" name="priority" value="MEDIUM"> Medium</label>
+                                <label><input type="radio" name="priority" value="HIGH"> High</label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label for="fault-description">Detailed Description</label>
+                        <textarea id="fault-description" class="chat-input" rows="6" placeholder="Please describe the steps to reproduce the issue. What did you expect to happen, and what happened instead?" required></textarea>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Attach Screenshot (Optional)</label>
+                        <div class="file-attachment-group">
+                            <input type="file" id="fault-screenshot" accept="image/png, image/jpeg" style="display: none;">
+                            <button type="button" id="browse-screenshot-btn" class="browse-btn">Choose File</button>
+                            <span id="screenshot-filename" class="filename-display">No file chosen</span>
+                        </div>
+                        <small class="helper-text">A screenshot of the issue is highly recommended.</small>
+                    </div>
+
+                    <div class="submission-area">
+                        <button type="submit" id="submit-fault-btn" class="submit-btn">
+                            <span class="btn-text">Submit Report</span>
+                            <span class="spinner" style="display: none;"></span>
+                        </button>
+                        <div id="fault-status-message" class="alert" style="display: none;"></div>
+                    </div>
+                </form>
+            </div>
         </div>
 
     </main>
@@ -384,6 +671,16 @@
     const uploadStatus = document.getElementById('upload-status');
     const incomingFilesList = document.getElementById('incoming-files-list');
     const noFilesPrompt = document.getElementById('no-files-prompt');
+    // Add to your script tag
+    const navFaults = document.getElementById('nav-faults');
+    const faultView = document.getElementById('fault-registration-view');
+    const faultForm = document.getElementById('fault-form');
+    // Get references to new elements
+    const submitBtn = document.getElementById('submit-fault-btn');
+    const statusMsg = document.getElementById('fault-status-message');
+    const browseScreenshotBtn = document.getElementById('browse-screenshot-btn');
+    const screenshotInput = document.getElementById('fault-screenshot');
+    const screenshotFilename = document.getElementById('screenshot-filename');
 
     // --- Application State ---
     let selectedFile = null;
@@ -400,18 +697,33 @@
         e.preventDefault();
         chatDashboardView.style.display = 'flex';
         fileSharingView.style.display = 'none';
+        faultView.style.display = 'none';
         navDashboard.classList.add('active');
         navFiles.classList.remove('active');
         navDashboard.classList.remove('has-unread'); // Clear notification on view
+        navFaults.classList.remove('active');
     });
 
     navFiles.addEventListener('click', (e) => {
         e.preventDefault();
         chatDashboardView.style.display = 'none';
+        faultView.style.display = 'none';
         fileSharingView.style.display = 'flex'; // Use flex for this layout
         navDashboard.classList.remove('active');
         navFiles.classList.add('active');
         navFiles.classList.remove('has-unread'); // Clear notification on view
+        navFaults.classList.remove('active');
+    });
+
+    navFaults.addEventListener('click', (e) => {
+        e.preventDefault();
+        // Hide other views and show the fault view
+        chatDashboardView.style.display = 'none';
+        fileSharingView.style.display = 'none';
+        faultView.style.display = 'block';
+        // Update active nav link
+        document.querySelector('.nav-link.active').classList.remove('active');
+        navFaults.classList.add('active');
     });
 
 
@@ -686,6 +998,168 @@
         }
         setTimeout(() => fileItem.remove(), 5000);
     }
+
+    // --- Replace your old faultForm event listener with this ---
+
+    // Logic for custom file input button
+    browseScreenshotBtn.addEventListener('click', () => screenshotInput.click());
+    screenshotInput.addEventListener('change', () => {
+        screenshotFilename.textContent = screenshotInput.files[0] ? screenshotInput.files[0].name : 'No file chosen';
+    });
+
+    faultForm.addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        // 1. Provide immediate UI feedback: Show loading state
+        submitBtn.disabled = true;
+        submitBtn.querySelector('.btn-text').style.display = 'none';
+        submitBtn.querySelector('.spinner').style.display = 'block';
+        statusMsg.style.display = 'none'; // Hide previous messages
+
+        // 2. Collect data using FormData for file uploads
+        const formData = new FormData();
+        formData.append('subject', document.getElementById('fault-subject').value);
+        formData.append('category', document.getElementById('fault-category').value);
+        formData.append('priority', document.querySelector('input[name="priority"]:checked').value);
+        formData.append('description', document.getElementById('fault-description').value);
+
+        // Append the file only if one is selected
+        if (screenshotInput.files[0]) {
+            formData.append('screenshot', screenshotInput.files[0]);
+        }
+
+        try {
+            const response = await fetch('/api/faults', {
+                method: 'POST',
+                body: formData // No Content-Type header needed; browser sets it for FormData
+            });
+
+            if (response.ok) {
+                // 3. Show success message
+                statusMsg.textContent = 'Report submitted successfully. Thank you!';
+                statusMsg.className = 'alert alert-success';
+                faultForm.reset(); // Clear the form
+                screenshotFilename.textContent = 'No file chosen'; // Reset filename display
+            } else {
+                // 4. Handle server errors
+                const errorData = await response.json();
+                throw new Error(errorData.message || 'Submission failed. Please try again.');
+            }
+        } catch (error) {
+            // 5. Handle network or other errors
+            statusMsg.textContent = `Error: ${error.message}`;
+            statusMsg.className = 'alert alert-danger';
+        } finally {
+            // 6. Restore the button to its original state
+            submitBtn.disabled = false;
+            submitBtn.querySelector('.btn-text').style.display = 'block';
+            submitBtn.querySelector('.spinner').style.display = 'none';
+        }
+    });
+
+    // --- Add these new element references ---
+    const progressBarContainer = document.querySelector('.progress-bar-container');
+    const progressBar = document.getElementById('progress-bar');
+    const incomingTab = document.getElementById('incoming-tab');
+    const sentTab = document.getElementById('sent-tab');
+    const sentFilesList = document.getElementById('sent-files-list');
+    const noSentFilesPrompt = document.getElementById('no-sent-files-prompt');
+
+    // --- Add this logic for the new History Tabs ---
+    incomingTab.addEventListener('click', () => {
+        incomingFilesList.style.display = 'block';
+        sentFilesList.style.display = 'none';
+        incomingTab.classList.add('active');
+        sentTab.classList.remove('active');
+    });
+
+    sentTab.addEventListener('click', () => {
+        incomingFilesList.style.display = 'none';
+        sentFilesList.style.display = 'block';
+        incomingTab.classList.remove('active');
+        sentTab.classList.add('active');
+    });
+
+    // --- ENTIRELY REPLACE your old uploadBtn event listener with this ---
+    uploadBtn.addEventListener('click', () => {
+        if (!selectedFile || !recipientSelect.value) return;
+
+        // 1. Prepare UI for upload
+        uploadBtn.disabled = true;
+        recipientSelect.disabled = true;
+        removeFileBtn.style.display = 'none'; // Hide remove button during upload
+        progressBarContainer.style.display = 'block';
+        progressBar.style.width = '0%';
+        uploadStatus.textContent = 'Starting upload...';
+
+        // Add item to "Sent" history
+        if (noSentFilesPrompt) noSentFilesPrompt.style.display = 'none';
+        const sentItem = document.createElement('li');
+        sentItem.innerHTML = `Sending <strong>${selectedFile.name}</strong> to ${recipientSelect.value}...`;
+        sentFilesList.prepend(sentItem);
+
+        // 2. Use XMLHttpRequest (XHR) to get upload progress
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('recipient', recipientSelect.value);
+        formData.append('sender', username);
+
+        const xhr = new XMLHttpRequest();
+
+        // 3. Listen for progress events
+        xhr.upload.onprogress = (event) => {
+            if (event.lengthComputable) {
+                const percentComplete = (event.loaded / event.total) * 100;
+                progressBar.style.width = percentComplete + '%';
+                uploadStatus.textContent = `Uploading... ${Math.round(percentComplete)}%`;
+            }
+        };
+
+        // 4. Handle completion
+        xhr.onload = () => {
+            if (xhr.status === 200) {
+                uploadStatus.textContent = '✅ File sent successfully!';
+                sentItem.innerHTML = `Sent <strong>${selectedFile.name}</strong> to ${recipientSelect.value}.`;
+            } else {
+                uploadStatus.textContent = '❌ Error: Upload failed.';
+                sentItem.innerHTML = `Failed to send <strong>${selectedFile.name}</strong> to ${recipientSelect.value}.`;
+            }
+            // Reset the UI after a delay
+            setTimeout(() => {
+                removeFileBtn.click(); // This function already resets the UI
+                recipientSelect.disabled = false;
+                removeFileBtn.style.display = 'block';
+            }, 3000);
+        };
+
+        // 5. Handle errors
+        xhr.onerror = () => {
+            uploadStatus.textContent = '❌ Network Error. Could not connect to server.';
+            sentItem.innerHTML = `Failed to send <strong>${selectedFile.name}</strong>.`;
+            setTimeout(() => {
+                removeFileBtn.click();
+                recipientSelect.disabled = false;
+                removeFileBtn.style.display = 'block';
+            }, 3000);
+        };
+
+        // 6. Send the request
+        xhr.open('POST', '/api/files/upload', true);
+        xhr.send(formData);
+    });
+
+    // Minor modification to your removeFileBtn listener to hide progress bar
+    removeFileBtn.addEventListener('click', () => {
+        selectedFile = null;
+        fileInputHidden.value = '';
+        filePreview.style.display = 'none';
+        dropZone.style.display = 'flex';
+        uploadBtn.disabled = true;
+        uploadStatus.textContent = '';
+        // Add this line
+        progressBarContainer.style.display = 'none';
+    });
+
 </script>
 </body>
 </html>
