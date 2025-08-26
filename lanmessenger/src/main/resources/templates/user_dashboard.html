@@ -222,12 +222,14 @@
             background-color: #e4e6eb;
         }
         .private-chat-users li.unread-indicator::after {
-            content: '';
+            content: ''; /* This is required for a pseudo-element to appear */
+            display: inline-block; /* Allows width, height, and margin */
             height: 9px;
             width: 9px;
-            background-color: #FFA500;
-            border-radius: 50%;
-            margin-left: 10px;
+            background-color: #FFA500; /* An orange color */
+            border-radius: 50%; /* This makes it a perfect circle */
+            margin-left: 10px; /* Adds space between the username and the dot */
+            vertical-align: middle; /* Helps align the dot nicely with the text */
         }
         .app-header {
             position: sticky;
@@ -468,6 +470,7 @@
         }
     }
 
+    // Find this function in your script
     function onPrivateMessageReceived(payload) {
         const message = JSON.parse(payload.body);
         const sender = message.sender;
@@ -478,10 +481,13 @@
         if (currentPrivateChatTarget === sender) {
             displayPrivateMessage(message);
         } else {
+            // THIS IS THE LOGIC TO ADD THE INDICATOR
             const userListItem = document.querySelector(`.private-chat-users li[data-username="${sender}"]`);
             if (userListItem) {
-                userListItem.classList.add('unread-indicator');
+                userListItem.classList.add('unread-indicator'); // <-- ADD THIS LINE
             }
+
+            // This part for the sidebar notification is also correct
             if (!navDashboard.classList.contains('active')) {
                 navDashboard.classList.add('has-unread');
             }
@@ -512,6 +518,7 @@
     });
 
     // --- Private Chat UI Logic ---
+    // Find this function in your script
     function startPrivateChat(targetUsername) {
         currentPrivateChatTarget = targetUsername;
         privateChatWelcome.style.display = 'none';
@@ -523,11 +530,12 @@
         renderPrivateConversation(targetUsername);
         updateActiveChatUser();
 
+        // THIS IS THE LOGIC TO REMOVE THE INDICATOR
         const userListItem = document.querySelector(`.private-chat-users li[data-username="${targetUsername}"]`);
         if (userListItem) {
-            userListItem.classList.remove('unread-indicator');
+            userListItem.classList.remove('unread-indicator'); // <-- ADD THIS LINE
         }
-        // Add this line to autofocus the input
+
         privateMessageInput.focus();
     }
 
