@@ -236,13 +236,13 @@
             top: 0;
             left: 0;
             width: 100%;
-            /*background: #a0bdf5; !* Blue background *!*/
-            color: #090a0c;
-            padding: 0px;
+            background: linear-gradient(#a44ffe, #9f91cf);
+            color: #0b0303;
+            padding: 2px;
             text-align: center;
-            border-radius: 10%;
+            border-radius: 5%;
             font-weight: bold;
-            font-size: 18px;
+            font-size: 20px;
         }
         /* --- Professional Fault Registration UI Styles --- */
         .view-wrapper {
@@ -451,6 +451,13 @@
             padding: 40px;
             border: none !important;
         }
+        .logo {
+            width: 150px; /* Set your desired width */
+            height: auto;  /* 'auto' maintains the original aspect ratio */
+            display: block;
+            margin-left: auto;
+            margin-right: auto;
+        }
 
     </style>
 </head>
@@ -458,7 +465,9 @@
 <div class="app-wrapper">
     <aside class="app-sidebar">
         <nav class="sidebar-nav">
+
             <header class="app-header">
+                <img th:src="@{/images/logo2_wobg.png}"  alt="Company Logo" class="logo"/>
                 <h3 class="app-title">NISHAN SANDESH</h3>
             </header>
             <hr>

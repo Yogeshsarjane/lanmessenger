@@ -41,12 +41,13 @@
             align-items: center;
             padding: 0 24px;
             height: 50px;
-            background-color: #a1c0da;
+            background: linear-gradient(#273cca, #6aa8e8);
             border-bottom: 1px solid var(--border-color);
             flex-shrink: 0;
+            color: #0b0303;
         }
         .app-header-title {
-            font-size: 22px;
+            font-size: 26px;
             font-weight: 500;
             font-weight: bold;
             text-align: center;
@@ -422,12 +423,17 @@
             background-color: #fa3e3e;
             color: white;
         }
+        .logo {
+            width: 140px; /* Set your desired width */
+            height: 50px;  /* 'auto' maintains the original aspect ratio */
+        }
 
     </style>
 </head>
 <body>
 <div class="app-wrapper">
     <header class="app-header">
+        <img th:src="@{/images/logo2.png}"  alt="Company Logo" class="logo"/>
         <div class="app-header-title">NISHAN SANDESH</div>
         <form th:action="@{/logout}" method="post">
             <button type="submit" class="logout-button">Logout</button>
