@@ -872,10 +872,6 @@
         autoScrollView(privateMessageArea);
     }
 
-    // REPLACED with the two functions below
-    // function renderUserTable(users) { /* ... */ }
-    // function renderPrivateChatUserList(users) { /* ... */ }
-
     // --- ROBUST & CORRECTED RENDER FUNCTIONS ---
     function renderUserTable(users) {
         const tableBody = document.getElementById('user-table-body');
@@ -966,6 +962,7 @@
         }
 
         renderPrivateConversation(targetUsername);
+        privateMessageInput.focus();
     }
 
     function renderPrivateConversation(target) {
@@ -1025,16 +1022,6 @@
         }).join('');
     }
 
-    function renderFileHistory(logs) {
-        if (!logs || logs.length === 0) {
-            logList.innerHTML = '<p>No file history found for this user.</p>';
-            return;
-        }
-        logList.innerHTML = logs.map(log => {
-            const time = new Date(log.timestamp).toLocaleTimeString();
-            return `<li class="log-item"><span class="timestamp">${time}</span> ${log.sender} sent <span class="recipient">${log.originalFilename}</span> to ${log.recipient}</li>`;
-        }).join('');
-    }
 
     function autoScrollView(element) {
         // A threshold in pixels to allow for some space.
