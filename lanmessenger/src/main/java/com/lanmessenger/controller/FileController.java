@@ -1,21 +1,14 @@
 package com.lanmessenger.controller;
 
-import com.lanmessenger.model.FileLog;
-import com.lanmessenger.repository.FileLogRepository;
+import com.lanmessenger.model.FileNotification;
 import com.lanmessenger.service.FileStorageService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
-import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
-import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import jakarta.servlet.http.HttpServletRequest;
-import java.io.IOException;
-import java.time.LocalDateTime;
 
 @RestController
 @RequestMapping("/api/files")
@@ -25,47 +18,42 @@ public class FileController {
     private FileStorageService fileStorageService;
 
     @Autowired
-    private FileLogRepository fileLogRepository;
+    private SimpMessagingTemplate messagingTemplate; // For sending WebSocket messages
 
+    /**
+     * Handles the file upload, stores the file, and notifies the recipient.
+     */
     @PostMapping("/upload")
     public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file,
-                                             @RequestParam("recipient") String recipient,
-                                             @AuthenticationPrincipal UserDetails currentUser) {
-        // Store the physical file
-        String storedFilename = fileStorageService.storeFile(file);
+                                             @RequestParam("sender") String sender,
+                                             @RequestParam("recipient") String recipient) {
+        // 1. Store the file on the server
+        String fileId = fileStorageService.storeFile(file);
 
-        // Create a log entry in the database
-        FileLog fileLog = new FileLog();
-        fileLog.setOriginalFilename(file.getOriginalFilename());
-        fileLog.setStoredFilename(storedFilename);
-        fileLog.setSender(currentUser.getUsername());
-        fileLog.setRecipient(recipient);
-        fileLog.setTimestamp(LocalDateTime.now());
-        fileLogRepository.save(fileLog);
+        // 2. Create a notification payload
+        FileNotification notification = new FileNotification(fileId, file.getOriginalFilename(), sender);
 
-        // Here we will add WebSocket notification logic later
-        // For now, we just confirm the upload was successful.
+        // 3. Send a private WebSocket message to the recipient
+        // The message is sent to the user's personal queue, e.g., /user/john/queue/files
+        messagingTemplate.convertAndSendToUser(recipient, "/queue/files", notification);
 
-        return ResponseEntity.ok("File uploaded successfully: " + file.getOriginalFilename());
+        // This is also a good place to save the file transfer details to a database.
+
+        return ResponseEntity.ok("File uploaded successfully. Notification sent to " + recipient);
     }
 
-    @GetMapping("/download/{filename:.+}")
-    public ResponseEntity<Resource> downloadFile(@PathVariable String filename, HttpServletRequest request) {
-        // Load file as Resource
-        Resource resource = fileStorageService.loadFileAsResource(filename);
+    /**
+     * Handles the file download request.
+     */
+    @GetMapping("/download/{fileId}")
+    public ResponseEntity<Resource> downloadFile(@PathVariable String fileId) {
+        Resource resource = fileStorageService.loadFileAsResource(fileId);
 
-        // Try to determine file's content type
-        String contentType = null;
-        try {
-            contentType = request.getServletContext().getMimeType(resource.getFile().getAbsolutePath());
-        } catch (IOException ex) {
-            // Fallback to the default content type if type could not be determined
-            contentType = "application/octet-stream";
-        }
+        // Extract original filename (everything after the first '_')
+        String originalFilename = fileId.substring(fileId.indexOf("_") + 1);
 
         return ResponseEntity.ok()
-                .contentType(MediaType.parseMediaType(contentType))
-                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + resource.getFilename() + "\"")
+                .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + originalFilename + "\"")
                 .body(resource);
     }
 }

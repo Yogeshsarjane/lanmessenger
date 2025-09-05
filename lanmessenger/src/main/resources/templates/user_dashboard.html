@@ -968,39 +968,44 @@
         }
     });
 
+    // The 'uploadBtn' event listener you wrote is already correct.
+    // It creates FormData and sends it to `/api/files/upload`. No changes are needed here.
+    // UPDATE the onFileReceived function to match the FileNotification payload
     function onFileReceived(payload) {
-        const fileData = JSON.parse(payload.body);
-        if (!navFiles.classList.contains('active')) {
-            navFiles.classList.add('has-unread');
-        }
-        if (noFilesPrompt) noFilesPrompt.style.display = 'none';
+        const fileData = JSON.parse(payload.body); // fileData now has fileId, fileName, sender
+
+        // ... (Your existing code to hide the "No files" prompt)
 
         const li = document.createElement('li');
-        li.id = `file-${fileData.fileId}`;
+        li.id = `file-${fileData.fileId}`; // Use the unique fileId
         li.innerHTML = `
-            <div style="display: flex; align-items: center; width: 100%;">
-                <span style="font-size: 1.5em; margin-right: 10px;">📥</span>
-                <div style="flex-grow: 1;">
-                    File from <strong>${fileData.sender}</strong>: ${fileData.fileName}
-                    <small style="display: block;">Awaiting your response...</small>
-                </div>
-                <div class="file-actions" style="margin-left: auto;">
-                    <button class="accept-btn">Accept</button>
-                    <button class="reject-btn">Reject</button>
-                </div>
-            </div>`;
+        <div style="display: flex; align-items: center; width: 100%;">
+            <span style="font-size: 1.5em; margin-right: 10px;">📥</span>
+            <div style="flex-grow: 1;">
+                File from <strong>${fileData.sender}</strong>: ${fileData.fileName}
+                <small style="display: block;">Awaiting your response...</small>
+            </div>
+            <div class="file-actions" style="margin-left: auto;">
+                <button class="accept-btn">Accept</button>
+                <button class="reject-btn">Reject</button>
+            </div>
+        </div>`;
         incomingFilesList.prepend(li);
 
+        // Ensure listeners use the correct fileId for the download URL
         li.querySelector('.accept-btn').addEventListener('click', () => handleFileAction(fileData.fileId, 'accept'));
         li.querySelector('.reject-btn').addEventListener('click', () => handleFileAction(fileData.fileId, 'reject'));
     }
 
+    // UPDATE the handleFileAction function
     function handleFileAction(fileId, action) {
         const fileItem = document.getElementById(`file-${fileId}`);
         if (!fileItem) return;
 
         if (action === 'accept') {
+            // THIS IS THE KEY CHANGE: Point to the download endpoint
             window.location.href = `/api/files/download/${fileId}`;
+
             fileItem.innerHTML = `<div style="display: flex; align-items: center;"><span>✅</span> <div style="margin-left: 10px;"><strong>File accepted</strong> and is downloading.</div></div>`;
         } else {
             fileItem.innerHTML = `<div style="display: flex; align-items: center;"><span>❌</span> <div style="margin-left: 10px;"><strong>File rejected</strong>.</div></div>`;

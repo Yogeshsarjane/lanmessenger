@@ -662,6 +662,7 @@
         const formData = new FormData();
         formData.append('file', selectedFile);
         formData.append('recipient', recipient);
+        formData.append('sender', adminUsername); // ADD THE SENDER
 
         uploadStatusV2.textContent = 'Sharing...';
         try {
@@ -1043,16 +1044,14 @@
      * @param {object} payload The WebSocket message payload.
      */
     function onFileReceived(payload) {
-        const fileData = JSON.parse(payload.body);
+        const fileData = JSON.parse(payload.body); // fileData has fileId, fileName, sender
 
-        // Remove the "No incoming files" prompt if it exists
         if (noFilesPrompt) {
             noFilesPrompt.style.display = 'none';
         }
 
-        // Create the new list item for the incoming file
         const li = document.createElement('li');
-        li.id = `file-${fileData.fileId}`; // Unique ID for the list item
+        li.id = `file-${fileData.fileId}`;
 
         const fileIcon = fileData.fileName.match(/\.(jpeg|jpg|png|gif)$/i) ? '🖼️' : '📄';
 
@@ -1067,17 +1066,11 @@
         <div class="file-actions">
             <button class="accept-btn">Accept</button>
             <button class="reject-btn">Reject</button>
-        </div>
-    `;
-
-        // Add the new item to the top of the list
+        </div>`;
         incomingFilesList.prepend(li);
 
-        // Add event listeners for the new buttons
         li.querySelector('.accept-btn').addEventListener('click', () => handleFileAction(fileData.fileId, 'accept'));
         li.querySelector('.reject-btn').addEventListener('click', () => handleFileAction(fileData.fileId, 'reject'));
-
-        updateFileCount();
     }
 
     /**
@@ -1103,33 +1096,23 @@
      * @param {string} fileId The unique ID of the file.
      * @param {string} action The action taken ('accept' or 'reject').
      */
+    // ENSURE you have the handleFileAction function (it was missing from your admin script)
     function handleFileAction(fileId, action) {
         const fileItem = document.getElementById(`file-${fileId}`);
         if (!fileItem) return;
 
-        // TODO: Send the action to the backend, e.g., via a STOMP message or a fetch request.
-        // For now, we'll just simulate the UI change.
-
         if (action === 'accept') {
-            // Here you would trigger the actual file download
-            // window.location.href = `/api/files/download/${fileId}`;
-
-            // Update the UI to show it's accepted
+            // Point to the correct download URL
+            window.location.href = `/api/files/download/${fileId}`;
             fileItem.querySelector('.file-actions').innerHTML = `<span style="color: var(--status-online); font-weight: 500;">Accepted</span>`;
-            // Optionally remove it from the list after a delay
-            setTimeout(() => {
-                fileItem.remove();
-                updateFileCount();
-            }, 3000);
-
-        } else { // 'reject'
+        } else {
             fileItem.querySelector('.file-actions').innerHTML = `<span style="color: #fa3e3e; font-weight: 500;">Rejected</span>`;
-            // Remove it from the list after a delay
-            setTimeout(() => {
-                fileItem.remove();
-                updateFileCount();
-            }, 3000);
         }
+
+        setTimeout(() => {
+            fileItem.remove();
+            // If you add a counter, update it here
+        }, 3000);
     }
 
 </script>
