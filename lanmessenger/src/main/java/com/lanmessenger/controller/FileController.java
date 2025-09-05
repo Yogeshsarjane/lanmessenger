@@ -9,9 +9,11 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
+import lombok.extern.slf4j.Slf4j;
 
 @RestController
 @RequestMapping("/api/files")
+@Slf4j
 public class FileController {
 
     @Autowired
@@ -37,9 +39,13 @@ public class FileController {
         // The message is sent to the user's personal queue, e.g., /user/john/queue/files
         messagingTemplate.convertAndSendToUser(recipient, "/queue/files", notification);
 
+        // ✅ THIS IS THE CRUCIAL LOG LINE
+        log.info("--- Sending file notification to: {} ---", recipient);
+
         // This is also a good place to save the file transfer details to a database.
 
         return ResponseEntity.ok("File uploaded successfully. Notification sent to " + recipient);
+
     }
 
     /**

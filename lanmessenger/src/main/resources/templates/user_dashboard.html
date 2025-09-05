@@ -949,24 +949,6 @@
         uploadStatus.textContent = '';
     });
 
-    uploadBtn.addEventListener('click', async () => {
-        if (!selectedFile || !recipientSelect.value) return;
-
-        const formData = new FormData();
-        formData.append('file', selectedFile);
-        formData.append('recipient', recipientSelect.value);
-        formData.append('sender', username);
-
-        uploadStatus.textContent = 'Uploading...';
-        try {
-            const response = await fetch('/api/files/upload', { method: 'POST', body: formData });
-            uploadStatus.textContent = response.ok ? `✅ File sent successfully!` : 'Error: Upload failed';
-        } catch (error) {
-            uploadStatus.textContent = 'Error: Could not connect to server.';
-        } finally {
-            setTimeout(() => removeFileBtn.click(), 3000);
-        }
-    });
 
     // The 'uploadBtn' event listener you wrote is already correct.
     // It creates FormData and sends it to `/api/files/upload`. No changes are needed here.
