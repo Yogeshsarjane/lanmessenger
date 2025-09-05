@@ -3,7 +3,8 @@ CREATE TABLE "user" (
                         id BIGINT AUTO_INCREMENT PRIMARY KEY,
                         username VARCHAR(255) NOT NULL UNIQUE,
                         password VARCHAR(255) NOT NULL,
-                        role VARCHAR(50) NOT NULL
+                        role VARCHAR(50) NOT NULL,
+                        allowed_ip VARCHAR(255) NULL -- ✅ Add this line
 );
 
 -- Creates the table to log all file transfers

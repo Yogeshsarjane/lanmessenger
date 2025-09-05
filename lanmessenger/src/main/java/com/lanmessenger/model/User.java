@@ -21,6 +21,13 @@ public class User {
     @Column(nullable = false)
     private String role;
 
+    private String allowedIp; // Make sure this exists
+
+    // Make sure you have getters for all fields
+    public String getAllowedIp() {
+        return allowedIp;
+    }
+
     // JPA requires a no-argument constructor
     public User() {
     }
@@ -53,6 +60,10 @@ public class User {
 
     public String getRole() {
         return role;
+    }
+
+    public void setAllowedIp(String allowedIp) {
+        this.allowedIp = allowedIp;
     }
 
     public void setRole(String role) {

@@ -5,12 +5,11 @@ import com.lanmessenger.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.core.io.ClassPathResource;
-import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder;
+import org.springframework.security.crypto.password.PasswordEncoder; // Changed from BCryptPasswordEncoder for flexibility
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedReader;
 import java.io.InputStreamReader;
-import java.util.Objects;
 
 @Component
 public class UserInitializer implements CommandLineRunner {
@@ -19,35 +18,38 @@ public class UserInitializer implements CommandLineRunner {
     private UserRepository userRepository;
 
     @Autowired
-    private BCryptPasswordEncoder passwordEncoder;
+    private PasswordEncoder passwordEncoder; // Use the interface, not the implementation
 
     @Override
     public void run(String... args) throws Exception {
-        // Only run this initializer if the user table is empty
         if (userRepository.count() == 0) {
             System.out.println("No users found in DB. Initializing from CSV.");
-            try {
-                // Load the CSV file from the resources folder
-                ClassPathResource resource = new ClassPathResource("initial-users.csv");
-                BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()));
+            try (BufferedReader reader = new BufferedReader(new InputStreamReader(
+                    new ClassPathResource("initial-users.csv").getInputStream()))) {
 
                 String line;
-                // Read the file line by line
                 while ((line = reader.readLine()) != null) {
-                    String[] data = line.split(",");
-                    if (data.length == 3) {
+                    // This logic now correctly handles lines with 3 or 4 columns
+                    String[] data = line.split(",", -1); // Use -1 to keep trailing empty columns
+
+                    if (data.length >= 3) { // Process any line with at least 3 columns
                         User user = new User();
                         user.setUsername(data[0].trim());
-                        // IMPORTANT: Hash the plain-text password before saving
                         user.setPassword(passwordEncoder.encode(data[1].trim()));
                         user.setRole(data[2].trim());
+
+                        // Check if the 4th column (allowedIp) exists and is not empty
+                        if (data.length > 3 && !data[3].trim().isEmpty()) {
+                            user.setAllowedIp(data[3].trim());
+                        }
+
                         userRepository.save(user);
                     }
                 }
-                reader.close();
                 System.out.println("Finished initializing users.");
             } catch (Exception e) {
                 System.err.println("Error initializing users from CSV: " + e.getMessage());
+                e.printStackTrace(); // Print full stack trace for better debugging
             }
         } else {
             System.out.println("Database already contains users. Skipping initialization.");

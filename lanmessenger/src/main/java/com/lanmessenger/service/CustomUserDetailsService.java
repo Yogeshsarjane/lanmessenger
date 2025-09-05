@@ -1,5 +1,6 @@
 package com.lanmessenger.service;
 
+import com.lanmessenger.model.CustomUserDetails; // ✅ IMPORT our custom class
 import com.lanmessenger.model.User;
 import com.lanmessenger.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -17,13 +18,19 @@ public class CustomUserDetailsService implements UserDetailsService {
 
     @Override
     public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        // Step 1: Find your user from the repository (this part is perfect)
         User user = userRepo.findByUsername(username);
-        if (user == null) throw new UsernameNotFoundException("User not found");
+        if (user == null) {
+            throw new UsernameNotFoundException("User not found: " + username);
+        }
 
-        return new org.springframework.security.core.userdetails.User(
+        // ✅ Step 2: Create our CUSTOM UserDetails object instead of the standard one
+        // We now pass in user.getAllowedIp() as the 4th argument.
+        return new CustomUserDetails(
                 user.getUsername(),
                 user.getPassword(),
-                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole()))
+                Collections.singletonList(new SimpleGrantedAuthority("ROLE_" + user.getRole())),
+                user.getAllowedIp() // <-- This is the only new part
         );
     }
 }
