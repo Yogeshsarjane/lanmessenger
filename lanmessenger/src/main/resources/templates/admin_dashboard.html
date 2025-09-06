@@ -889,14 +889,14 @@
             // ... (rest of your row creation logic)
             const statusCell = row.insertCell(0);
             const usernameCell = row.insertCell(1);
-            const ipCell = row.insertCell(2);
+            const currentIpCell = row.insertCell(2);
             const actionCell = row.insertCell(3);
             const statusDot = document.createElement('span');
             statusDot.className = 'status-dot ' + (user.status === 'Online' ? 'status-online' : 'status-offline');
             statusCell.appendChild(statusDot);
             statusCell.append(user.status);
             usernameCell.textContent = user.username;
-            ipCell.textContent = user.ipAddress;
+            currentIpCell.textContent = user.currentIp || 'N/A'; // Show 'N/A' if IP hasn't been captured yet
             const removeButton = document.createElement('button');
             removeButton.className = 'remove-button';
             removeButton.textContent = 'Remove';
