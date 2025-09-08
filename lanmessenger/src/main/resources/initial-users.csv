@@ -1,7 +1,7 @@
-admin,123,ADMIN
-yogesh,123,USER,127.0.0.1
-msst01,msst01,USER,0:0:0:0:0:0:0:1
-msst02,msst02,USER,10.249.37.144
+admin,Admin@12345,ADMIN
+colo,123,USER,
+msst01,msst01,USER,
+msst02,msst02,USER,
 msst03,msst03,USER
 msst04,msst04,USER
 msst05,msst05,USER
