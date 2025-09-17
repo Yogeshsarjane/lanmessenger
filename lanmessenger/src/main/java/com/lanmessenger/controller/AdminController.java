@@ -9,6 +9,9 @@ import com.lanmessenger.service.AppConfigService;
 import com.lanmessenger.service.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.PageRequest; // <-- IMPORT
+import org.springframework.data.domain.Pageable;    // <-- IMPORT
+import java.security.Principal;                   // <-- IMPORT
 
 import java.util.Collections;
 import java.util.List;
@@ -76,6 +79,27 @@ public class AdminController {
     public ResponseEntity<List<ChatMessageLog>> getRecentGroupChatHistory() {
         List<ChatMessageLog> history = chatLogRepository.findFirst50ByRecipientOrderByTimestampDesc("group");
         Collections.reverse(history);
+        return ResponseEntity.ok(history);
+    }
+
+    // ✅ ADD THIS NEW ENDPOINT
+    @GetMapping("/history/privatechat/{otherUser}")
+    public ResponseEntity<List<ChatMessageLog>> getPrivateChatHistory(
+            Principal principal,
+            @PathVariable String otherUser) {
+
+        // Get the currently logged-in admin's username
+        String currentUser = principal.getName();
+
+        // We'll fetch the 20 most recent messages
+        Pageable limit = PageRequest.of(0, 20);
+
+        // Call the new repository method
+        List<ChatMessageLog> history = chatLogRepository.findPrivateChatHistory(currentUser, otherUser, limit);
+
+        // The messages are newest-first, so we reverse them for correct chatbox order
+        Collections.reverse(history);
+
         return ResponseEntity.ok(history);
     }
 }

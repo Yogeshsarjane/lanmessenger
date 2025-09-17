@@ -941,29 +941,42 @@
         });
     }
 
-    function startPrivateChat(targetUsername) {
+    // In admin_dashboard.html <script>
+
+    async function startPrivateChat(targetUsername) {
         currentPrivateChatTarget = targetUsername;
         privateChatHeader.textContent = `Private Chat with ${targetUsername}`;
+        privateMessageArea.innerHTML = '<li><em>Loading history...</em></li>'; // Show a loading message
 
-        if (!privateChatHistory.has(targetUsername)) {
-            privateChatHistory.set(targetUsername, []);
+        // Update the active user in the list
+        document.querySelectorAll('.private-chat-users li.active').forEach(li => li.classList.remove('active'));
+        const userListItem = document.querySelector(`.private-chat-users li[data-username="${targetUsername}"]`);
+        if (userListItem) {
+            userListItem.classList.add('active');
+            userListItem.classList.remove('unread-indicator');
         }
 
-        // Remove 'active' class from any currently active user
-        const currentActive = document.querySelector('.private-chat-users li.active');
-        if (currentActive) {
-            currentActive.classList.remove('active');
+        // ✅ FETCH HISTORY FROM THE SERVER
+        try {
+            const response = await fetch(`/api/admin/history/privatechat/${targetUsername}`);
+            if (!response.ok) throw new Error('Failed to fetch history');
+
+            const history = await response.json();
+
+            // Clear loading message and display the fetched history
+            privateMessageArea.innerHTML = '';
+            history.forEach(msg => displayPrivateMessage(msg));
+
+            // Also store it in the local cache for the current session
+            privateChatHistory.set(targetUsername, history);
+
+        } catch (error) {
+            console.error("Error fetching private chat history:", error);
+            privateMessageArea.innerHTML = '<li><em>Could not load history.</em></li>';
         }
 
-        // MODIFICATION: Find the new item using the attribute selector
-        const newItem = document.querySelector(`.private-chat-users li[data-username="${targetUsername}"]`);
-        if (newItem) {
-            newItem.classList.add('active');
-            // Remove the indicator since the user is now viewing the chat
-            newItem.classList.remove('unread-indicator');
-        }
-
-        renderPrivateConversation(targetUsername);
+        // Scroll to the bottom of the chat area
+        autoScrollView(privateMessageArea);
         privateMessageInput.focus();
     }
 
