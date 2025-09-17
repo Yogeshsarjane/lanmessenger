@@ -1155,6 +1155,34 @@
         // Add this line
         progressBarContainer.style.display = 'none';
     });
+    // Add this entire block to your main <script> tag on each dashboard page
+
+    (function() {
+        // The interval (in milliseconds) for how often we check the time.
+        const checkInterval = 3000; // 3 seconds
+
+        // The threshold (in milliseconds). If the time gap is larger than this, we refresh.
+        // This should be significantly larger than the checkInterval.
+        const refreshThreshold = 10000; // 10 seconds
+
+        let lastTime = new Date().getTime();
+
+        setInterval(() => {
+            const currentTime = new Date().getTime();
+            const timeDifference = currentTime - lastTime;
+
+            // Check if the time difference is greater than our threshold
+            if (timeDifference > refreshThreshold) {
+                console.log("Wake-up detected. Reloading the page to re-establish connection.");
+
+                // Reload the page
+                location.reload();
+            }
+
+            // Update the lastTime for the next check
+            lastTime = currentTime;
+        }, checkInterval);
+    })();
 
 </script>
 </body>

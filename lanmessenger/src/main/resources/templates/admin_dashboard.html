@@ -617,6 +617,7 @@
         fetchAndDisplayUsers();
         connectWebSocket();
         fetchInitialSettings();
+        fetchAndDisplayGroupChatHistory();
     });
 
     // --- Event Listeners ---
@@ -1113,6 +1114,29 @@
             fileItem.remove();
             // If you add a counter, update it here
         }, 3000);
+    }
+    // In admin_dashboard.html <script>
+
+    async function fetchAndDisplayGroupChatHistory() {
+        try {
+            const response = await fetch('/api/admin/history/groupchat');
+            if (!response.ok) {
+                throw new Error('Failed to fetch chat history');
+            }
+            const history = await response.json();
+
+            // Clear any existing messages and display the fetched history
+            messageArea.innerHTML = '';
+            history.forEach(message => {
+                // We reuse the same displayMessage function that our WebSocket uses
+                // so the messages look identical.
+                displayMessage(message);
+            });
+
+        } catch (error) {
+            console.error(error);
+            messageArea.innerHTML = '<li>Could not load chat history.</li>';
+        }
     }
 
 </script>

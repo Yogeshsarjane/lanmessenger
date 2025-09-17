@@ -11,16 +11,17 @@ import java.util.List;
 @Repository
 public interface ChatMessageLogRepository extends JpaRepository<ChatMessageLog, Long> {
 
-    /**
-     * Finds all chat messages relevant to a specific user.
-     * This includes:
-     * 1. All public group messages.
-     * 2. All private messages sent BY this user.
-     * 3. All private messages sent TO this user.
-     * @param username The username to search for.
-     * @return A list of relevant chat logs.
-     */
+    // This is your existing method for user-specific history - KEEP IT.
     @Query("SELECT c FROM ChatMessageLog c WHERE c.recipient = 'group' OR c.sender = :username OR c.recipient = :username ORDER BY c.timestamp ASC")
     List<ChatMessageLog> findChatHistoryForUser(@Param("username") String username);
+
+    // ✅ ADD THIS NEW METHOD
+    /**
+     * Finds the 50 most recent messages sent to a specific recipient (e.g., "group"),
+     * ordered by the newest timestamp first.
+     * @param recipient The recipient to search for ("group").
+     * @return A list of the 50 most recent chat logs.
+     */
+    List<ChatMessageLog> findFirst50ByRecipientOrderByTimestampDesc(String recipient);
 
 }
