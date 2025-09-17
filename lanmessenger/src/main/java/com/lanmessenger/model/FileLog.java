@@ -4,18 +4,23 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 @Entity
+@Table(name = "file_log") // Explicitly set the table name
 public class FileLog {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
 
+    // ✅ Add @Column annotations to match your database schema
+    @Column(name = "original_filename")
     private String originalFilename;
-    private String storedFilename; // A unique name to prevent conflicts
+
+    @Column(name = "stored_filename")
+    private String storedFilename;
+
     private String sender;
     private String recipient;
     private LocalDateTime timestamp;
-
     // Getters and Setters for all fields...
 
     public Long getId() {

@@ -1,61 +1,65 @@
 package com.lanmessenger.controller;
 
+import com.lanmessenger.model.FileLog; // <-- IMPORT
 import com.lanmessenger.model.FileNotification;
+import com.lanmessenger.repository.FileLogRepository; // <-- IMPORT
 import com.lanmessenger.service.FileStorageService;
-import org.springframework.beans.factory.annotation.Autowired;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-import lombok.extern.slf4j.Slf4j;
+import java.time.LocalDateTime; // <-- IMPORT
 
 @RestController
 @RequestMapping("/api/files")
 @Slf4j
 public class FileController {
 
-    @Autowired
-    private FileStorageService fileStorageService;
+    // --- Declare all dependencies as final fields ---
+    private final FileStorageService fileStorageService;
+    private final SimpMessagingTemplate messagingTemplate;
+    private final FileLogRepository fileLogRepository; // <-- ADD THIS
 
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate; // For sending WebSocket messages
+    // --- Use one constructor to inject everything (Best Practice) ---
+    public FileController(FileStorageService fileStorageService,
+                          SimpMessagingTemplate messagingTemplate,
+                          FileLogRepository fileLogRepository) { // <-- ADD THIS
+        this.fileStorageService = fileStorageService;
+        this.messagingTemplate = messagingTemplate;
+        this.fileLogRepository = fileLogRepository; // <-- ADD THIS
+    }
 
-    /**
-     * Handles the file upload, stores the file, and notifies the recipient.
-     */
     @PostMapping("/upload")
     public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file,
                                              @RequestParam("sender") String sender,
                                              @RequestParam("recipient") String recipient) {
+
         // 1. Store the file on the server
-        String fileId = fileStorageService.storeFile(file);
+        String storedFilename = fileStorageService.storeFile(file);
 
-        // 2. Create a notification payload
-        FileNotification notification = new FileNotification(fileId, file.getOriginalFilename(), sender);
-
-        // 3. Send a private WebSocket message to the recipient
-        // The message is sent to the user's personal queue, e.g., /user/john/queue/files
+        // 2. Create and send the WebSocket notification
+        FileNotification notification = new FileNotification(storedFilename, file.getOriginalFilename(), sender);
         messagingTemplate.convertAndSendToUser(recipient, "/queue/files", notification);
+        log.info("Sent file notification for {} to recipient: {}", file.getOriginalFilename(), recipient);
 
-        // ✅ THIS IS THE CRUCIAL LOG LINE
-        log.info("--- Sending file notification to: {} ---", recipient);
+        // ✅ 3. CREATE AND SAVE THE FILE LOG
+        FileLog logEntry = new FileLog();
+        logEntry.setSender(sender);
+        logEntry.setRecipient(recipient);
+        logEntry.setOriginalFilename(file.getOriginalFilename());
+        logEntry.setStoredFilename(storedFilename); // Save the unique name
+        logEntry.setTimestamp(LocalDateTime.now());
+        fileLogRepository.save(logEntry);
 
-        // This is also a good place to save the file transfer details to a database.
-
-        return ResponseEntity.ok("File uploaded successfully. Notification sent to " + recipient);
-
+        return ResponseEntity.ok("File uploaded successfully.");
     }
 
-    /**
-     * Handles the file download request.
-     */
     @GetMapping("/download/{fileId}")
     public ResponseEntity<Resource> downloadFile(@PathVariable String fileId) {
         Resource resource = fileStorageService.loadFileAsResource(fileId);
-
-        // Extract original filename (everything after the first '_')
         String originalFilename = fileId.substring(fileId.indexOf("_") + 1);
 
         return ResponseEntity.ok()
