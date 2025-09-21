@@ -700,7 +700,23 @@
     // ===================================================================================
     // SECTION 2: INITIALIZATION & VIEW SWITCHING (ADAPTED FOR NEW UI)
     // ===================================================================================
-    document.addEventListener('DOMContentLoaded', connect);
+    document.addEventListener('DOMContentLoaded', () => {
+        connect();
+        fetchAndDisplayGroupChatHistory();
+    });
+
+    async function fetchAndDisplayGroupChatHistory() {
+        try {
+            const response = await fetch('/api/chat/history/group');
+            if (!response.ok) throw new Error('Failed to fetch group chat history');
+            const history = await response.json();
+            messageArea.innerHTML = '';
+            history.forEach(message => displayMessage(message));
+        } catch (error) {
+            console.error(error);
+            messageArea.innerHTML = '<li>Could not load chat history.</li>';
+        }
+    }
 
     navDashboard.addEventListener('click', (e) => {
         e.preventDefault();
@@ -840,24 +856,38 @@
 
     // --- Private Chat UI Logic ---
     // Find this function in your script
-    function startPrivateChat(targetUsername) {
+    async function startPrivateChat(targetUsername) {
         currentPrivateChatTarget = targetUsername;
         privateChatWelcome.style.display = 'none';
         privateMessageArea.style.display = 'block';
         privateMessageForm.style.display = 'flex';
         privateChatPanelHeader.textContent = `Chat with ${targetUsername}`;
+        privateMessageArea.innerHTML = '<li><em>Loading history...</em></li>';
 
-        if (!chatHistory.has(targetUsername)) chatHistory.set(targetUsername, []);
-        renderPrivateConversation(targetUsername);
-        updateActiveChatUser();
-
-        // THIS IS THE LOGIC TO REMOVE THE INDICATOR
-        const userListItem = document.querySelector(`.private-chat-users li[data-username="${targetUsername}"]`);
+        document.querySelectorAll('#private-chat-user-list li.active').forEach(li => li.classList.remove('active'));
+        const userListItem = document.querySelector(`#private-chat-user-list li[data-username="${targetUsername}"]`);
         if (userListItem) {
-            userListItem.classList.remove('unread-indicator'); // <-- ADD THIS LINE
+            userListItem.classList.add('active');
+            userListItem.classList.remove('unread-indicator');
         }
 
-        privateMessageInput.focus();
+        try {
+            const response = await fetch(`/api/chat/history/private/${targetUsername}`);
+            if (!response.ok) throw new Error('Failed to fetch private chat history');
+            const history = await response.json();
+            privateMessageArea.innerHTML = '';
+            history.forEach(msg => displayPrivateMessage(msg));
+            chatHistory.set(targetUsername, history);
+        } catch (error) {
+            console.error(error);
+            privateMessageArea.innerHTML = '<li><em>Could not load history.</em></li>';
+        }
+
+        setTimeout(() => {
+            // You can add this log to make sure the element is correct
+            console.log("Attempting to focus on:", privateMessageInput);
+            privateMessageInput.focus();
+        }, 0); // A delay of 0 is all that's needed
     }
 
     function renderPrivateConversation(target) {

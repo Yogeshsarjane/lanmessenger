@@ -5,7 +5,8 @@ CREATE TABLE "user" (
                         password VARCHAR(255) NOT NULL,
                         role VARCHAR(50) NOT NULL,
                         allowed_ip VARCHAR(255) NULL, -- ✅ Add this line
-                        current_ip VARCHAR(255) NULL -- ✅ Add this line
+                        current_ip VARCHAR(255) NULL, -- ✅ Add this line
+                        status VARCHAR(255) DEFAULT 'Offline' -- ✅ Add this line
 );
 
 -- Creates the table to log all file transfers

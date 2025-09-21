@@ -37,6 +37,7 @@ public class UserInitializer implements CommandLineRunner {
                         user.setUsername(data[0].trim());
                         user.setPassword(passwordEncoder.encode(data[1].trim()));
                         user.setRole(data[2].trim());
+                        user.setStatus("Offline"); // ✅ ADD THIS LINE
 
                         // Check if the 4th column (allowedIp) exists and is not empty
                         if (data.length > 3 && !data[3].trim().isEmpty()) {

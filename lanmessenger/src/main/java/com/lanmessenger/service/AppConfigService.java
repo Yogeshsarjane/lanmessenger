@@ -6,12 +6,10 @@ import org.springframework.stereotype.Service;
 public class AppConfigService {
 
     public enum Visibility {
-        PUBLIC,
-        PRIVATE
+        PUBLIC, PRIVATE
     }
 
-    // Default visibility is PUBLIC
-    private Visibility userListVisibility = Visibility.PUBLIC;
+    private Visibility userListVisibility = Visibility.PUBLIC; // Default to public
 
     public Visibility getUserListVisibility() {
         return userListVisibility;
@@ -19,6 +17,5 @@ public class AppConfigService {
 
     public void setUserListVisibility(Visibility visibility) {
         this.userListVisibility = visibility;
-        System.out.println("User list visibility set to: " + visibility);
     }
 }

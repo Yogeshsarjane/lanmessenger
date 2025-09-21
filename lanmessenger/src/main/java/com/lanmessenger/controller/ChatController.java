@@ -1,72 +1,46 @@
 package com.lanmessenger.controller;
 
-import com.lanmessenger.model.ChatMessage;
 import com.lanmessenger.model.ChatMessageLog;
 import com.lanmessenger.repository.ChatMessageLogRepository;
-import com.lanmessenger.service.UserService;
-import com.lanmessenger.service.WebSocketEventListener;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.messaging.handler.annotation.MessageMapping;
-import org.springframework.messaging.handler.annotation.Payload;
-import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
-import org.springframework.messaging.simp.SimpMessagingTemplate;
-import org.springframework.stereotype.Controller;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RestController;
 
-import java.time.LocalDateTime;
+import java.security.Principal;
+import java.util.Collections;
+import java.util.List;
 
-@Controller
+@RestController
+@RequestMapping("/api/chat")
 public class ChatController {
 
-    @Autowired
-    private UserService userService;
+    private final ChatMessageLogRepository chatLogRepository;
 
-    @Autowired
-    private SimpMessagingTemplate messagingTemplate;
-
-    @Autowired
-    private ChatMessageLogRepository chatLogRepository;
-
-    /**
-     * --- THIS METHOD HAS BEEN FIXED ---
-     * It no longer uses @SendTo. Instead, it manually broadcasts the message
-     * using the messagingTemplate, which is more reliable.
-     */
-    @MessageMapping("/chat.sendMessage")
-    public void sendMessage(@Payload ChatMessage chatMessage) {
-        System.out.println(">>> Received public message: [" + chatMessage.getSender() + ": " + chatMessage.getContent() + "]");
-
-        saveChatMessage(chatMessage, "group");
-
-        // Broadcast the message to everyone subscribed to /topic/public
-        messagingTemplate.convertAndSend("/topic/public", chatMessage);
+    public ChatController(ChatMessageLogRepository chatLogRepository) {
+        this.chatLogRepository = chatLogRepository;
     }
 
-    @MessageMapping("/chat.addUser")
-    public void addUser(@Payload ChatMessage chatMessage, SimpMessageHeaderAccessor headerAccessor) {
-        headerAccessor.getSessionAttributes().put("username", chatMessage.getSender());
-        WebSocketEventListener.addUser(chatMessage.getSender());
-        userService.broadcastUserList();
-
-        // Also broadcast the JOIN message to the public topic
-        messagingTemplate.convertAndSend("/topic/public", chatMessage);
+    @GetMapping("/history/group")
+    public ResponseEntity<List<ChatMessageLog>> getRecentGroupChatHistory() {
+        Pageable limit = PageRequest.of(0, 20);
+        List<ChatMessageLog> history = chatLogRepository.findByRecipientOrderByTimestampDesc("group", limit);
+        Collections.reverse(history);
+        return ResponseEntity.ok(history);
     }
 
-    @MessageMapping("/chat.privateMessage")
-    public void sendPrivateMessage(@Payload ChatMessage chatMessage) {
-        saveChatMessage(chatMessage, chatMessage.getRecipient());
-        messagingTemplate.convertAndSendToUser(
-                chatMessage.getRecipient(),
-                "/queue/private",
-                chatMessage
-        );
-    }
+    @GetMapping("/history/private/{otherUser}")
+    public ResponseEntity<List<ChatMessageLog>> getPrivateChatHistory(
+            Principal principal,
+            @PathVariable String otherUser) {
 
-    private void saveChatMessage(ChatMessage chatMessage, String recipient) {
-        ChatMessageLog log = new ChatMessageLog();
-        log.setSender(chatMessage.getSender());
-        log.setRecipient(recipient);
-        log.setContent(chatMessage.getContent());
-        log.setTimestamp(LocalDateTime.now());
-        chatLogRepository.save(log);
+        String currentUser = principal.getName();
+        Pageable limit = PageRequest.of(0, 20);
+        List<ChatMessageLog> history = chatLogRepository.findPrivateChatHistory(currentUser, otherUser, limit);
+        Collections.reverse(history);
+        return ResponseEntity.ok(history);
     }
 }

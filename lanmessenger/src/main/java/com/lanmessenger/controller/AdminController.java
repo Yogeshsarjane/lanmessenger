@@ -58,7 +58,9 @@ public class AdminController {
             String visibilityStr = payload.get("visibility");
             AppConfigService.Visibility visibility = AppConfigService.Visibility.valueOf(visibilityStr.toUpperCase());
             appConfigService.setUserListVisibility(visibility);
-            userService.broadcastUserList();
+            if (visibility == AppConfigService.Visibility.PUBLIC) {
+                userService.broadcastUserList(); // If changed to public, broadcast immediately
+            }
             return ResponseEntity.ok().build();
         } catch (Exception e) {
             return ResponseEntity.badRequest().build();
@@ -77,7 +79,8 @@ public class AdminController {
 
     @GetMapping("/history/groupchat")
     public ResponseEntity<List<ChatMessageLog>> getRecentGroupChatHistory() {
-        List<ChatMessageLog> history = chatLogRepository.findFirst50ByRecipientOrderByTimestampDesc("group");
+        Pageable limit = PageRequest.of(0, 50); // Admin can see more history
+        List<ChatMessageLog> history = chatLogRepository.findByRecipientOrderByTimestampDesc("group", limit);
         Collections.reverse(history);
         return ResponseEntity.ok(history);
     }

@@ -621,9 +621,23 @@
     });
 
     // --- Event Listeners ---
-    visibilityToggle.addEventListener('change', () => updateVisibility(visibilityToggle.value));
+    visibilityToggle.addEventListener('change', async () => {
+        const newVisibility = visibilityToggle.value;
+        try {
+            await fetch('/api/admin/settings/visibility', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ visibility: newVisibility })
+            });
+        } catch (error) {
+            console.error("Failed to update visibility", error);
+        }
+    });
     chatHistoryTab.addEventListener('click', () => {
+        // Render the chat history stored in our global variable
         renderChatHistory(currentUserChatHistory);
+
+        // Set this tab to active and the other to inactive
         chatHistoryTab.classList.add('active');
         fileHistoryTab.classList.remove('active');
     });
@@ -777,7 +791,7 @@
         stompClient.connect({}, onConnected, () => console.error('WebSocket connection failed.'));
     }
     function onConnected() {
-        stompClient.subscribe('/topic/admin/users', onUserListReceived);
+        stompClient.subscribe('/topic/users', onUserListReceived);
         stompClient.subscribe('/topic/public', onPublicMessageReceived);
         stompClient.subscribe('/user/' + adminUsername + '/queue/private', onPrivateMessageReceived);
 

@@ -25,11 +25,23 @@ public class User {
     @Column(name = "current_ip") // Add column for current IP
     private String currentIp; // ✅ Make sure this field exists
 
+
+    @Column(name = "status") // ✅ Add column for status
+    private String status;   // ✅ Make sure this field exists
+
     // JPA requires a no-argument constructor
     public User() {
     }
 
     // --- Getters and Setters ---
+
+    public String getStatus() { // ✅ ADD THIS GETTER
+        return status;
+    }
+
+    public void setStatus(String status) { // ✅ ADD THIS SETTER
+        this.status = status;
+    }
 
     public String getAllowedIp() {
         return allowedIp;
