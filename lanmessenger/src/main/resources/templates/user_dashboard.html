@@ -458,6 +458,14 @@
             margin-left: auto;
             margin-right: auto;
         }
+        .version-label {
+            position: fixed;
+            bottom: 5px;
+            right: 12px;
+            font-size: 15px;
+            color: gray;
+            z-index: 9999;
+        }
 
     </style>
 </head>
@@ -635,6 +643,7 @@
         </div>
 
     </main>
+    <div class="version-label">v1.0.3</div>
 </div>
 
 <script th:src="@{/js/sockjs.min.js}"></script>
@@ -774,7 +783,7 @@
     // --- Message & User List Handlers ---
     function onUserListReceived(payload) {
         const users = JSON.parse(payload.body);
-        const otherOnlineUsers = users.filter(user => user.username !== username && user.status === 'Online');
+        const otherOnlineUsers = users.filter(user => user.username !== username && (user.status === 'ONLINE' || user.status === 'UNSTABLE'));
 
         // Clear existing lists
         privateChatUserList.innerHTML = '';

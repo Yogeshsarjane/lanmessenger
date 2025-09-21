@@ -1,11 +1,11 @@
-package com.lanmessenger.service; // Or your correct package
+package com.lanmessenger.service;
 
-import com.lanmessenger.model.ChatMessage; // <-- IMPORT this
+import com.lanmessenger.model.ChatMessage;
 import com.lanmessenger.service.UserService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.context.event.EventListener;
-import org.springframework.messaging.simp.SimpMessageHeaderAccessor;
-import org.springframework.messaging.simp.SimpMessagingTemplate;   // <-- IMPORT this
+import org.springframework.messaging.simp.SimpMessageHeaderAccessor; // ✅ ADD THIS IMPORT
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.stereotype.Component;
 import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 
@@ -14,9 +14,8 @@ import org.springframework.web.socket.messaging.SessionDisconnectEvent;
 public class WebSocketEventListener {
 
     private final UserService userService;
-    private final SimpMessagingTemplate messagingTemplate; // <-- ADD DEPENDENCY
+    private final SimpMessagingTemplate messagingTemplate;
 
-    // ✅ Update the constructor to accept the new dependency
     public WebSocketEventListener(UserService userService, SimpMessagingTemplate messagingTemplate) {
         this.userService = userService;
         this.messagingTemplate = messagingTemplate;
@@ -24,25 +23,16 @@ public class WebSocketEventListener {
 
     @EventListener
     public void handleWebSocketDisconnectListener(SessionDisconnectEvent event) {
+        // This line will now work correctly
         SimpMessageHeaderAccessor headerAccessor = SimpMessageHeaderAccessor.wrap(event.getMessage());
         String username = (String) headerAccessor.getSessionAttributes().get("username");
-
-        // ... inside the handleWebSocketDisconnectListener method ...
 
         if (username != null) {
             log.info("User Disconnected: {}", username);
 
-            // Mark user as offline in the service
-            userService.setUserOffline(username);
+            userService.setUserUnstable(username);
 
-            // ✅ CREATE AND SEND THE LEAVE MESSAGE USING THE ENUM
-            ChatMessage leaveMessage = new ChatMessage();
-            // Use the enum constant, not a string
-            leaveMessage.setType(ChatMessage.MessageType.LEAVE);
-            leaveMessage.setSender(username);
-            messagingTemplate.convertAndSend("/topic/public", leaveMessage);
-
-            // Broadcast the updated user list
+            // Immediately broadcast the list so others see the "Unstable" status
             userService.broadcastUserList();
         }
     }

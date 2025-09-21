@@ -2,6 +2,9 @@ package com.lanmessenger.model;
 
 import jakarta.persistence.*;
 
+// 1. IMPORT the new enum
+import com.lanmessenger.model.UserStatus;
+
 @Entity
 @Table(name = "\"user\"")
 public class User {
@@ -19,29 +22,33 @@ public class User {
     @Column(nullable = false)
     private String role;
 
-    // Good practice to specify column name
+    @Column(name = "allowed_ip") // Added this annotation for consistency
     private String allowedIp;
 
-    @Column(name = "current_ip") // Add column for current IP
-    private String currentIp; // ✅ Make sure this field exists
+    @Column(name = "current_ip")
+    private String currentIp;
 
+    // 2. CHANGE the type of the 'status' field from String to UserStatus
+    @Enumerated(EnumType.STRING) // 3. ADD this annotation to tell the database how to store it
+    @Column(name = "status")
+    private UserStatus status;
 
-    @Column(name = "status") // ✅ Add column for status
-    private String status;   // ✅ Make sure this field exists
-
-    // JPA requires a no-argument constructor
     public User() {
     }
 
     // --- Getters and Setters ---
 
-    public String getStatus() { // ✅ ADD THIS GETTER
+    // 4. UPDATE the getter to return UserStatus
+    public UserStatus getStatus() {
         return status;
     }
 
-    public void setStatus(String status) { // ✅ ADD THIS SETTER
+    // 5. UPDATE the setter to accept UserStatus
+    public void setStatus(UserStatus status) {
         this.status = status;
     }
+
+    // --- Other getters and setters remain the same ---
 
     public String getAllowedIp() {
         return allowedIp;
@@ -55,12 +62,9 @@ public class User {
         return currentIp;
     }
 
-    // ✅ ADD THIS SETTER METHOD
     public void setCurrentIp(String currentIp) {
         this.currentIp = currentIp;
     }
-
-    // ... other getters and setters for id, username, password, role ...
 
     public Long getId() {
         return id;

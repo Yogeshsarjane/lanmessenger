@@ -428,6 +428,51 @@
             height: 50px;  /* 'auto' maintains the original aspect ratio */
         }
 
+        .status-unstable {
+            background-color: #f7b924; /* An amber/yellow color */
+            /* Add a pulsating animation to show it's trying to connect */
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% {
+                box-shadow: 0 0 0 0 rgba(247, 185, 36, 0.7);
+            }
+            70% {
+                box-shadow: 0 0 0 8px rgba(247, 185, 36, 0);
+            }
+            100% {
+                box-shadow: 0 0 0 0 rgba(247, 185, 36, 0);
+            }
+        }
+        /* Add these classes for the status text colors */
+        .text-online {
+            color: var(--status-online); /* Green */
+            font-weight: 500;
+        }
+
+        .text-unstable {
+            color: #f7b924; /* Amber/yellow */
+            font-weight: 500;
+        }
+
+        .text-offline {
+            color: var(--text-secondary); /* Grey */
+            font-weight: 500;
+        }
+        .status-cell {
+            display: flex;
+            align-items: center;
+        }
+        .version-label {
+            position: fixed;
+            bottom: 5px;
+            right: 20px;
+            font-size: 15px;
+            color: gray;
+            z-index: 9999;
+        }
+
     </style>
 </head>
 <body>
@@ -553,6 +598,7 @@
             </section>
         </aside>
     </div>
+    <div class="version-label">v1.0.3</div>
 </div>
 
 <script th:src="@{/js/sockjs.min.js}"></script>
@@ -891,41 +937,72 @@
     // --- ROBUST & CORRECTED RENDER FUNCTIONS ---
     function renderUserTable(users) {
         const tableBody = document.getElementById('user-table-body');
-        // This check prevents the crash.
         if (!tableBody) {
             console.error('CRITICAL: Element with ID "user-table-body" was not found.');
             return;
         }
+
+        // Clear the table body before adding new rows
         tableBody.innerHTML = '';
+
         users.forEach(user => {
             const row = tableBody.insertRow();
             row.className = 'clickable-row';
-            row.onclick = () => viewUserHistory(user.username);
-            // ... (rest of your row creation logic)
+            // Use addEventListener, which is a more modern practice than .onclick
+            row.addEventListener('click', () => viewUserHistory(user.username));
+
+            // --- Create Cells ---
             const statusCell = row.insertCell(0);
             const usernameCell = row.insertCell(1);
-            const currentIpCell = row.insertCell(2);
+            const ipAddressCell = row.insertCell(2); // Renamed for clarity
             const actionCell = row.insertCell(3);
+
+            // --- 1. Status Cell (Logic is now handled once) ---
+            statusCell.className = 'status-cell'; // Use a CSS class for styling
+
             const statusDot = document.createElement('span');
-            statusDot.className = 'status-dot ' + (user.status === 'Online' ? 'status-online' : 'status-offline');
+            const statusText = document.createElement('span');
+
+            // This single block now handles all status logic
+            if (user.status === 'ONLINE') {
+                statusDot.className = 'status-dot status-online';
+                statusText.className = 'text-online';
+                statusText.textContent = 'Online';
+            } else if (user.status === 'UNSTABLE') {
+                statusDot.className = 'status-dot status-unstable';
+                statusText.className = 'text-unstable';
+                statusText.textContent = 'Unstable';
+            } else {
+                statusDot.className = 'status-dot status-offline';
+                statusText.className = 'text-offline';
+                statusText.textContent = 'Offline';
+            }
             statusCell.appendChild(statusDot);
-            statusCell.append(user.status);
+            statusCell.appendChild(statusText);
+
+            // --- 2. Username Cell ---
             usernameCell.textContent = user.username;
-            currentIpCell.textContent = user.currentIp || 'N/A'; // Show 'N/A' if IP hasn't been captured yet
+
+            // --- 3. IP Address Cell ---
+            ipAddressCell.textContent = user.ipAddress || 'N/A';
+
+            // --- 4. Action Cell ---
             const removeButton = document.createElement('button');
             removeButton.className = 'remove-button';
             removeButton.textContent = 'Remove';
-            removeButton.onclick = (e) => {
-                e.stopPropagation();
-                if (confirm(`Are you sure you want to remove ${user.username}?`)) { console.log(`Removing user: ${user.id}`); }
-            };
+            removeButton.addEventListener('click', (e) => {
+                e.stopPropagation(); // Prevents the row's click event from firing
+                if (confirm(`Are you sure you want to remove ${user.username}?`)) {
+                    console.log(`Removing user: ${user.id}`);
+                }
+            });
             actionCell.appendChild(removeButton);
         });
     }
 
     function renderPrivateChatUserList(users) {
         privateChatUserList.innerHTML = '';
-        const otherUsers = users.filter(user => user.username !== adminUsername && user.status === 'Online');
+        const otherUsers = users.filter(user => user.username !== adminUsername && (user.status === 'ONLINE' || user.status === 'UNSTABLE'));
         otherUsers.forEach(user => {
             const li = document.createElement('li');
             li.dataset.username = user.username;
@@ -944,7 +1021,7 @@
 
         // --- THIS IS THE MODIFIED LINE ---
         // It now filters for users who are NOT the admin AND are 'Online'
-        const onlineUsers = users.filter(u => u.username !== adminUsername && u.status === 'Online');
+        const onlineUsers = users.filter(u => u.username !== adminUsername && u.status === 'ONLINE');
 
         newRecipientSelect.innerHTML = '<option value="">-- Select a user --</option>';
         onlineUsers.forEach(user => {
