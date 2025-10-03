@@ -787,20 +787,28 @@
     }
 
     function onConnected() {
-        stompClient.subscribe('/topic/users', onUserListReceived);
-        stompClient.subscribe('/topic/public', onPublicMessageReceived);
-        stompClient.subscribe('/user/' + username + '/queue/private', onPrivateMessageReceived);
-        stompClient.subscribe('/user/' + username + '/queue/files', onFileReceived);
-        // Announce that this user has joined
-    stompClient.send("/app/chat.addUser", {}, JSON.stringify({ sender: username, type: 'JOIN' }));
+    // All your existing stompClient.subscribe(...) calls go here
+    stompClient.subscribe('/topic/users', onUserListReceived);
+    stompClient.subscribe('/topic/public', onPublicMessageReceived);
+    stompClient.subscribe('/user/' + username + '/queue/private', onPrivateMessageReceived);
+    stompClient.subscribe('/user/' + username + '/queue/files', onFileReceived);
+
+    // Announce that this user has joined
+    const currentUsername = typeof adminUsername !== 'undefined' ? adminUsername : username;
+    stompClient.send("/app/chat.addUser", {}, JSON.stringify({ sender: currentUsername, type: 'JOIN' }));
 
     // ✅ START THE HEARTBEAT PING
-    // Clear any old interval just in case
-    if (heartbeatInterval) clearInterval(heartbeatInterval);
+    // Clear any old interval just in case of a reconnect
+    if (heartbeatInterval) {
+        clearInterval(heartbeatInterval);
+    }
 
+    // Send a ping message to the server every 20 seconds
     heartbeatInterval = setInterval(() => {
-        stompClient.send("/heartbeat.ping", {}, JSON.stringify({ sender: username }));
-    }, 20000); // Send a ping every 20 seconds
+        if (stompClient && stompClient.connected) {
+            stompClient.send("/app/heartbeat.ping", {}, JSON.stringify({ sender: currentUsername }));
+        }
+    }, 20000);
 }
 
     // ✅ You can add the new code block right here
