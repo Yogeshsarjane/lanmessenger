@@ -480,6 +480,21 @@
             margin-bottom: 2px; /* Adjust vertical alignment if needed */
         }
 
+        .nav-link {
+            position: relative; /* This is needed to position the dot correctly */
+        }
+        .nav-link.has-unread::after {
+            content: '';
+            position: middle;
+            top: 12px; /* Adjust vertical position */
+            right: 15px; /* Adjust horizontal position */
+            height: 9px;
+            width: 9px;
+            background-color: #FFA500; /* Orange */
+            border-radius: 50%;
+            border: 1px solid var(--background-sidebar); /* Adds a nice border */
+        }
+
     </style>
 </head>
 <body>
@@ -1105,6 +1120,9 @@
         // Ensure listeners use the correct fileId for the download URL
         li.querySelector('.accept-btn').addEventListener('click', () => handleFileAction(fileData.fileId, 'accept'));
         li.querySelector('.reject-btn').addEventListener('click', () => handleFileAction(fileData.fileId, 'reject'));
+        if (!navFiles.classList.contains('active')) {
+        navFiles.classList.add('has-unread');
+    }
     }
 
     // UPDATE the handleFileAction function
