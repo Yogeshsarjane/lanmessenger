@@ -30,7 +30,7 @@ public class WebSocketEventListener {
         if (username != null) {
             log.info("User Disconnected: {}", username);
 
-            userService.setUserUnstable(username);
+            userService.setUserConnecting(username);
 
             // Immediately broadcast the list so others see the "Unstable" status
             userService.broadcastUserList();

@@ -10,6 +10,7 @@ public class ChatMessage {
     private String sender;
     private String recipient; // Used for private messages
     private MessageType type;
+    private String timestamp; // ✅ ADD THIS FIELD
 
     /**
      * Defines the type of message being sent.
@@ -23,6 +24,16 @@ public class ChatMessage {
 
     // --- Getters and Setters ---
     // These are required for the framework to serialize/deserialize the object.
+
+    // --- Getters and Setters ---
+
+    public String getTimestamp() { // ✅ ADD THIS GETTER
+        return timestamp;
+    }
+
+    public void setTimestamp(String timestamp) { // ✅ ADD THIS SETTER
+        this.timestamp = timestamp;
+    }
 
     public String getContent() {
         return content;

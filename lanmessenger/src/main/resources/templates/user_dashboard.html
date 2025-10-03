@@ -467,6 +467,19 @@
             z-index: 9999;
         }
 
+        .message-content-wrapper {
+            display: flex;
+            align-items: flex-end; /* Aligns content and timestamp to the bottom */
+            gap: 8px; /* Adds a small space between content and timestamp */
+        }
+
+        .message-timestamp {
+            font-size: 0.75em;
+            color: var(--text-secondary);
+            white-space: nowrap; /* Prevents the time from wrapping to a new line */
+            margin-bottom: 2px; /* Adjust vertical alignment if needed */
+        }
+
     </style>
 </head>
 <body>
@@ -703,6 +716,7 @@
     // --- Application State ---
     let selectedFile = null;
     let currentPrivateChatTarget = null;
+    let heartbeatInterval = null;
     const chatHistory = new Map();
 
 
@@ -777,7 +791,27 @@
         stompClient.subscribe('/topic/public', onPublicMessageReceived);
         stompClient.subscribe('/user/' + username + '/queue/private', onPrivateMessageReceived);
         stompClient.subscribe('/user/' + username + '/queue/files', onFileReceived);
-        stompClient.send("/app/chat.addUser", {}, JSON.stringify({ sender: username, type: 'JOIN' }));
+        // Announce that this user has joined
+    stompClient.send("/app/chat.addUser", {}, JSON.stringify({ sender: username, type: 'JOIN' }));
+
+    // ✅ START THE HEARTBEAT PING
+    // Clear any old interval just in case
+    if (heartbeatInterval) clearInterval(heartbeatInterval);
+
+    heartbeatInterval = setInterval(() => {
+        stompClient.send("/heartbeat.ping", {}, JSON.stringify({ sender: username }));
+    }, 20000); // Send a ping every 20 seconds
+}
+
+    // ✅ You can add the new code block right here
+    const logoutForm = document.querySelector('form[action="/logout"]');
+    if(logoutForm) {
+        logoutForm.addEventListener('submit', (e) => {
+            // Send a final logout message before the form submits
+            if (stompClient && stompClient.connected) {
+                stompClient.send("/heartbeat.logout", {}, JSON.stringify({ sender: username }));
+            }
+        });
     }
 
     // --- Message & User List Handlers ---
@@ -922,7 +956,8 @@
         } else {
             const messageBubble = document.createElement('div');
             messageBubble.classList.add('message-bubble');
-            if (message.sender === username) {
+
+            if (message.sender === username) { // 'username' should be the logged-in user's name
                 messageBubble.classList.add('sent');
             } else {
                 messageBubble.classList.add('received');
@@ -931,9 +966,23 @@
                 senderElement.textContent = message.sender;
                 messageBubble.appendChild(senderElement);
             }
+
+            // ✅ Create a wrapper for the content and timestamp
+            const contentWrapper = document.createElement('div');
+            contentWrapper.classList.add('message-content-wrapper');
+
             const contentElement = document.createElement('div');
             contentElement.textContent = message.content;
-            messageBubble.appendChild(contentElement);
+
+            const timestampElement = document.createElement('span');
+            timestampElement.classList.add('message-timestamp');
+            timestampElement.textContent = message.timestamp || ''; // Use the timestamp from the message
+
+            // Add content and timestamp to the wrapper
+            contentWrapper.appendChild(contentElement);
+            contentWrapper.appendChild(timestampElement);
+
+            messageBubble.appendChild(contentWrapper);
             messageItem.appendChild(messageBubble);
         }
         return messageItem;

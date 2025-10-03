@@ -472,6 +472,18 @@
             color: gray;
             z-index: 9999;
         }
+        .message-content-wrapper {
+            display: flex;
+            align-items: flex-end; /* Aligns content and timestamp to the bottom */
+            gap: 8px; /* Adds a small space between content and timestamp */
+        }
+
+        .message-timestamp {
+            font-size: 0.75em;
+            color: var(--text-secondary);
+            white-space: nowrap; /* Prevents the time from wrapping to a new line */
+            margin-bottom: 2px; /* Adjust vertical alignment if needed */
+        }
 
     </style>
 </head>
@@ -653,6 +665,7 @@
 
     let selectedFile = null;
     let currentPrivateChatTarget = null;
+    let heartbeatInterval = null;
     const privateChatHistory = new Map();
     let currentUserChatHistory = [];
     let currentUserFileHistory = [];
@@ -845,6 +858,27 @@
         stompClient.subscribe('/user/' + adminUsername + '/queue/files', onFileReceived);
 
         stompClient.send("/app/chat.addUser", {}, JSON.stringify({ sender: adminUsername, type: 'JOIN' }));
+                // Announce that this user has joined
+    stompClient.send("/app/chat.addUser", {}, JSON.stringify({ sender: username, type: 'JOIN' }));
+
+    // ✅ START THE HEARTBEAT PING
+    // Clear any old interval just in case
+    if (heartbeatInterval) clearInterval(heartbeatInterval);
+
+    heartbeatInterval = setInterval(() => {
+        stompClient.send("/heartbeat.ping", {}, JSON.stringify({ sender: username }));
+    }, 20000); // Send a ping every 20 seconds
+}
+
+    // ✅ You can add the new code block right here
+    const logoutForm = document.querySelector('form[action="/logout"]');
+    if(logoutForm) {
+        logoutForm.addEventListener('submit', (e) => {
+            // Send a final logout message before the form submits
+            if (stompClient && stompClient.connected) {
+                stompClient.send("/heartbeat.logout", {}, JSON.stringify({ sender: username }));
+            }
+        });
     }
     function onUserListReceived(payload) {
         const users = JSON.parse(payload.body);
@@ -873,64 +907,19 @@
 
 
     // --- Rendering and Display Functions ---
+    // REPLACE your old displayMessage function with this one
+
     function displayMessage(message) {
-        const messageItem = document.createElement('li');
-        messageItem.classList.add('message-item');
-
-        if (message.type === 'JOIN' || message.type === 'LEAVE') {
-            messageItem.classList.add('event-message');
-            messageItem.textContent = `${message.sender} has ${message.type === 'JOIN' ? 'joined' : 'left'}.`;
-        } else {
-            const messageBubble = document.createElement('div');
-            messageBubble.classList.add('message-bubble');
-
-            if (message.sender === adminUsername) {
-                messageBubble.classList.add('sent');
-            } else {
-                messageBubble.classList.add('received');
-                const senderElement = document.createElement('div');
-                senderElement.classList.add('message-sender');
-                senderElement.textContent = message.sender;
-                messageBubble.appendChild(senderElement);
-            }
-
-            const contentElement = document.createElement('div');
-            contentElement.textContent = message.content;
-            messageBubble.appendChild(contentElement);
-
-            messageItem.appendChild(messageBubble);
-        }
-        messageArea.appendChild(messageItem);
+        const messageElement = createMessageElement(message);
+        messageArea.appendChild(messageElement);
         autoScrollView(messageArea);
     }
 
+    // REPLACE your old displayPrivateMessage function with this one
+
     function displayPrivateMessage(message) {
-        const messageItem = document.createElement('li');
-        messageItem.classList.add('message-item');
-
-        const messageBubble = document.createElement('div');
-        messageBubble.classList.add('message-bubble');
-
-        // Differentiate between messages sent by the admin and messages received
-        if (message.sender === adminUsername) {
-            messageBubble.classList.add('sent');
-        } else {
-            messageBubble.classList.add('received');
-
-            // Add the sender's name above the bubble for received messages
-            const senderElement = document.createElement('div');
-            senderElement.classList.add('message-sender');
-            senderElement.textContent = message.sender;
-            messageBubble.appendChild(senderElement);
-        }
-
-        const contentElement = document.createElement('div');
-        contentElement.textContent = message.content;
-        messageBubble.appendChild(contentElement);
-
-        messageItem.appendChild(messageBubble);
-
-        privateMessageArea.appendChild(messageItem);
+        const messageElement = createMessageElement(message);
+        privateMessageArea.appendChild(messageElement);
         autoScrollView(privateMessageArea);
     }
 
@@ -1241,6 +1230,53 @@
             console.error(error);
             messageArea.innerHTML = '<li>Could not load chat history.</li>';
         }
+    }
+    // ADD THIS NEW, REUSABLE FUNCTION
+
+    function createMessageElement(message) {
+        const messageItem = document.createElement('li');
+        messageItem.classList.add('message-item');
+
+        if (message.type === 'JOIN' || message.type === 'LEAVE') {
+            messageItem.classList.add('event-message');
+            messageItem.textContent = `${message.sender} has ${message.type === 'JOIN' ? 'joined' : 'left'}.`;
+        } else {
+            const messageBubble = document.createElement('div');
+            messageBubble.classList.add('message-bubble');
+
+            if (message.sender === adminUsername) { // Use the logged-in admin's username
+                messageBubble.classList.add('sent');
+            } else {
+                messageBubble.classList.add('received');
+                const senderElement = document.createElement('div');
+                senderElement.classList.add('message-sender');
+                senderElement.textContent = message.sender;
+                messageBubble.appendChild(senderElement);
+            }
+
+            // Wrapper for the content and timestamp
+            const contentWrapper = document.createElement('div');
+            contentWrapper.classList.add('message-content-wrapper');
+
+            const contentElement = document.createElement('div');
+            contentElement.textContent = message.content;
+
+            const timestampElement = document.createElement('span');
+            timestampElement.classList.add('message-timestamp');
+            // Handle both live messages (with timestamp string) and history (with full timestamp object)
+            if (message.timestamp) {
+                timestampElement.textContent = typeof message.timestamp === 'string'
+                    ? message.timestamp
+                    : new Date(message.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+            }
+
+            contentWrapper.appendChild(contentElement);
+            contentWrapper.appendChild(timestampElement);
+
+            messageBubble.appendChild(contentWrapper);
+            messageItem.appendChild(messageBubble);
+        }
+        return messageItem;
     }
 
 </script>
