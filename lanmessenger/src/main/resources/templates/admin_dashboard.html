@@ -1193,6 +1193,9 @@ privateMessageForm.addEventListener('submit', (event) => {
 
         li.querySelector('.accept-btn').addEventListener('click', () => handleFileAction(fileData.fileId, 'accept'));
         li.querySelector('.reject-btn').addEventListener('click', () => handleFileAction(fileData.fileId, 'reject'));
+        if (!filesTab.classList.contains('active')) {
+        filesTab.classList.add('has-unread');
+    }
     }
 
     /**
