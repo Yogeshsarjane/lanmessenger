@@ -893,17 +893,36 @@
     });
 
     privateMessageForm.addEventListener('submit', (event) => {
-        event.preventDefault();
-        const messageContent = privateMessageInput.value.trim();
-        if (messageContent && stompClient && currentPrivateChatTarget) {
-            const chatMessage = { sender: username, recipient: currentPrivateChatTarget, content: messageContent, type: 'PRIVATE' };
-            stompClient.send("/app/chat.privateMessage", {}, JSON.stringify(chatMessage));
-            if (!chatHistory.has(currentPrivateChatTarget)) chatHistory.set(currentPrivateChatTarget, []);
-            chatHistory.get(currentPrivateChatTarget).push(chatMessage);
-            displayPrivateMessage(chatMessage);
-            privateMessageInput.value = '';
+    event.preventDefault();
+    const messageContent = privateMessageInput.value.trim();
+
+    if (messageContent && stompClient && currentPrivateChatTarget) {
+        const chatMessage = {
+            sender: username,
+            recipient: currentPrivateChatTarget,
+            content: messageContent,
+            type: 'PRIVATE'
+        };
+
+        // Send the original message to the server
+        stompClient.send("/app/chat.privateMessage", {}, JSON.stringify(chatMessage));
+
+        // Add a client-side timestamp for the immediate UI update
+        const time = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        chatMessage.timestamp = time;
+
+        // ✅ CORRECTED to use 'chatHistory'
+        if (!chatHistory.has(currentPrivateChatTarget)) {
+            chatHistory.set(currentPrivateChatTarget, []);
         }
-    });
+        // ✅ CORRECTED to use 'chatHistory'
+        chatHistory.get(currentPrivateChatTarget).push(chatMessage);
+
+        displayPrivateMessage(chatMessage);
+
+        privateMessageInput.value = '';
+    }
+});
 
     // --- Private Chat UI Logic ---
     // Find this function in your script
@@ -955,46 +974,55 @@
 
     // --- Message Rendering ---
     function createMessageElement(message) {
-        const messageItem = document.createElement('li');
-        messageItem.classList.add('message-item');
+    const messageItem = document.createElement('li');
+    messageItem.classList.add('message-item');
+    const currentUsername = typeof adminUsername !== 'undefined' ? adminUsername : username;
 
-        if (message.type === 'JOIN' || message.type === 'LEAVE') {
-            messageItem.classList.add('event-message');
-            messageItem.textContent = `${message.sender} has ${message.type === 'JOIN' ? 'joined' : 'left'}.`;
+    if (message.type === 'JOIN' || message.type === 'LEAVE') {
+        messageItem.classList.add('event-message');
+        messageItem.textContent = `${message.sender} has ${message.type === 'JOIN' ? 'joined' : 'left'}.`;
+    } else {
+        const messageBubble = document.createElement('div');
+        messageBubble.classList.add('message-bubble');
+
+        if (message.sender === currentUsername) {
+            messageBubble.classList.add('sent');
         } else {
-            const messageBubble = document.createElement('div');
-            messageBubble.classList.add('message-bubble');
-
-            if (message.sender === username) { // 'username' should be the logged-in user's name
-                messageBubble.classList.add('sent');
-            } else {
                 messageBubble.classList.add('received');
                 const senderElement = document.createElement('div');
                 senderElement.classList.add('message-sender');
                 senderElement.textContent = message.sender;
                 messageBubble.appendChild(senderElement);
-            }
-
-            // ✅ Create a wrapper for the content and timestamp
-            const contentWrapper = document.createElement('div');
-            contentWrapper.classList.add('message-content-wrapper');
-
-            const contentElement = document.createElement('div');
-            contentElement.textContent = message.content;
-
-            const timestampElement = document.createElement('span');
-            timestampElement.classList.add('message-timestamp');
-            timestampElement.textContent = message.timestamp || ''; // Use the timestamp from the message
-
-            // Add content and timestamp to the wrapper
-            contentWrapper.appendChild(contentElement);
-            contentWrapper.appendChild(timestampElement);
-
-            messageBubble.appendChild(contentWrapper);
-            messageItem.appendChild(messageBubble);
         }
-        return messageItem;
+
+        const contentWrapper = document.createElement('div');
+        contentWrapper.classList.add('message-content-wrapper');
+
+        const contentElement = document.createElement('div');
+        contentElement.textContent = message.content;
+
+        const timestampElement = document.createElement('span');
+        timestampElement.classList.add('message-timestamp');
+
+        // This is the new, smarter logic:
+        if (message.timestamp) {
+            // Check if it's a long ISO string from the history
+            if (message.timestamp.includes('T')) {
+                timestampElement.textContent = formatHistoryTimestamp(message.timestamp);
+            } else {
+                // It's a simple, pre-formatted time from a live message
+                timestampElement.textContent = message.timestamp;
+            }
+        }
+
+        contentWrapper.appendChild(contentElement);
+        contentWrapper.appendChild(timestampElement);
+
+        messageBubble.appendChild(contentWrapper);
+        messageItem.appendChild(messageBubble);
     }
+    return messageItem;
+}
 
     function displayMessage(message) {
         messageArea.appendChild(createMessageElement(message));
@@ -1279,6 +1307,19 @@
             lastTime = currentTime;
         }, checkInterval);
     })();
+    /**
+ * Formats a full ISO timestamp string into a simple time string (e.g., "10:19 PM").
+ * @param {string} isoString The full timestamp from the server.
+ * @returns {string} A formatted time string.
+ */
+function formatHistoryTimestamp(isoString) {
+    if (!isoString) {
+        return '';
+    }
+    const date = new Date(isoString);
+    // This formats the time into a local format like "10:19 PM"
+    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
 
 </script>
 </body>

@@ -798,18 +798,39 @@
             messageInput.value = '';
         }
     });
-    privateMessageForm.addEventListener('submit', (event) => {
-        event.preventDefault();
-        const messageContent = privateMessageInput.value.trim();
-        if (messageContent && stompClient && currentPrivateChatTarget) {
-            const chatMessage = { sender: adminUsername, recipient: currentPrivateChatTarget, content: messageContent, type: 'PRIVATE' };
-            stompClient.send("/app/chat.privateMessage", {}, JSON.stringify(chatMessage));
-            if (!privateChatHistory.has(currentPrivateChatTarget)) privateChatHistory.set(currentPrivateChatTarget, []);
-            privateChatHistory.get(currentPrivateChatTarget).push(chatMessage);
-            displayPrivateMessage(chatMessage);
-            privateMessageInput.value = '';
+   // REPLACE your existing privateMessageForm event listener with this
+
+privateMessageForm.addEventListener('submit', (event) => {
+    event.preventDefault();
+    const messageContent = privateMessageInput.value.trim();
+    const currentUsername = typeof adminUsername !== 'undefined' ? adminUsername : username;
+
+    if (messageContent && stompClient && currentPrivateChatTarget) {
+        const chatMessage = {
+            sender: currentUsername,
+            recipient: currentPrivateChatTarget,
+            content: messageContent,
+            type: 'PRIVATE'
+        };
+
+        // 1. Send the original message to the server. It will get the official timestamp there.
+        stompClient.send("/app/chat.privateMessage", {}, JSON.stringify(chatMessage));
+
+        // 2. ✅ Add a timestamp locally and display the message immediately.
+        // This makes the timestamp appear instantly for the sender.
+        const time = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        chatMessage.timestamp = time;
+        displayPrivateMessage(chatMessage);
+
+        // Also add to local history
+        if (!privateChatHistory.has(currentPrivateChatTarget)) {
+            privateChatHistory.set(currentPrivateChatTarget, []);
         }
-    });
+        privateChatHistory.get(currentPrivateChatTarget).push(chatMessage);
+
+        privateMessageInput.value = '';
+    }
+});
 
 
     // --- Data Fetching and Initial Setup ---
@@ -1238,6 +1259,7 @@
     function createMessageElement(message) {
         const messageItem = document.createElement('li');
         messageItem.classList.add('message-item');
+        const currentUsername = typeof adminUsername !== 'undefined' ? adminUsername : username;
 
         if (message.type === 'JOIN' || message.type === 'LEAVE') {
             messageItem.classList.add('event-message');
@@ -1246,17 +1268,16 @@
             const messageBubble = document.createElement('div');
             messageBubble.classList.add('message-bubble');
 
-            if (message.sender === adminUsername) { // Use the logged-in admin's username
+            if (message.sender === currentUsername) {
                 messageBubble.classList.add('sent');
             } else {
-                messageBubble.classList.add('received');
-                const senderElement = document.createElement('div');
-                senderElement.classList.add('message-sender');
-                senderElement.textContent = message.sender;
-                messageBubble.appendChild(senderElement);
+                    messageBubble.classList.add('received');
+                    const senderElement = document.createElement('div');
+                    senderElement.classList.add('message-sender');
+                    senderElement.textContent = message.sender;
+                    messageBubble.appendChild(senderElement);
             }
 
-            // Wrapper for the content and timestamp
             const contentWrapper = document.createElement('div');
             contentWrapper.classList.add('message-content-wrapper');
 
@@ -1265,11 +1286,16 @@
 
             const timestampElement = document.createElement('span');
             timestampElement.classList.add('message-timestamp');
-            // Handle both live messages (with timestamp string) and history (with full timestamp object)
+
+            // This is the new, smarter logic:
             if (message.timestamp) {
-                timestampElement.textContent = typeof message.timestamp === 'string'
-                    ? message.timestamp
-                    : new Date(message.timestamp).toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+                // Check if it's a long ISO string from the history
+                if (message.timestamp.includes('T')) {
+                    timestampElement.textContent = formatHistoryTimestamp(message.timestamp);
+                } else {
+                    // It's a simple, pre-formatted time from a live message
+                    timestampElement.textContent = message.timestamp;
+                }
             }
 
             contentWrapper.appendChild(contentElement);
@@ -1280,6 +1306,19 @@
         }
         return messageItem;
     }
+    /**
+ * Formats a full ISO timestamp string into a simple time string (e.g., "10:19 PM").
+ * @param {string} isoString The full timestamp from the server.
+ * @returns {string} A formatted time string.
+ */
+function formatHistoryTimestamp(isoString) {
+    if (!isoString) {
+        return '';
+    }
+    const date = new Date(isoString);
+    // This formats the time into a local format like "10:19 PM"
+    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+}
 
 </script>
 </body>
