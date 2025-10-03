@@ -907,8 +907,12 @@
         // Send the original message to the server
         stompClient.send("/app/chat.privateMessage", {}, JSON.stringify(chatMessage));
 
-        // Add a client-side timestamp for the immediate UI update
-        const time = new Date().toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+        // ✅ ADD hour12: true to force AM/PM format
+        const time = new Date().toLocaleTimeString([], {
+            hour: 'numeric',
+            minute: '2-digit',
+            hour12: true
+        });
         chatMessage.timestamp = time;
 
         // ✅ CORRECTED to use 'chatHistory'
@@ -1307,18 +1311,26 @@
             lastTime = currentTime;
         }, checkInterval);
     })();
+
     /**
  * Formats a full ISO timestamp string into a simple time string (e.g., "10:19 PM").
  * @param {string} isoString The full timestamp from the server.
- * @returns {string} A formatted time string.
+ * @return {string} A formatted time string.
  */
 function formatHistoryTimestamp(isoString) {
     if (!isoString) {
         return '';
     }
     const date = new Date(isoString);
-    // This formats the time into a local format like "10:19 PM"
-    return date.toLocaleTimeString([], { hour: 'numeric', minute: '2-digit' });
+
+    // ✅ Add hour12: true to force AM/PM format
+    const options = {
+        hour: 'numeric',
+        minute: '2-digit',
+        hour12: true
+    };
+
+    return date.toLocaleTimeString([], options);
 }
 
 </script>
