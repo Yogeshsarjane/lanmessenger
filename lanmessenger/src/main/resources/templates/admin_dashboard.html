@@ -485,6 +485,21 @@
             margin-bottom: 2px; /* Adjust vertical alignment if needed */
         }
 
+        .date-separator {
+            text-align: center;
+            margin: 15px 0;
+            font-size: 0.8em;
+            font-weight: 500;
+            color: var(--text-secondary);
+            background-color: #e9ecef;
+            padding: 2px 10px;
+            border-radius: 12px;
+            display: inline-block;
+            left: 50%;
+            position: relative;
+            transform: translateX(-50%);
+        }
+
     </style>
 </head>
 <body>
@@ -1073,8 +1088,12 @@ privateMessageForm.addEventListener('submit', (event) => {
 
             // Clear loading message and display the fetched history
             privateMessageArea.innerHTML = '';
-            history.forEach(msg => displayPrivateMessage(msg));
-
+            let lastMessage = null;
+            history.forEach(msg => {
+                addDateSeparatorIfNeeded(msg, lastMessage, privateMessageArea); // ✅ ADD THIS
+                displayPrivateMessage(msg);
+                lastMessage = msg; // ✅ ADD THIS
+            });
             // Also store it in the local cache for the current session
             privateChatHistory.set(targetUsername, history);
 
@@ -1251,12 +1270,12 @@ privateMessageForm.addEventListener('submit', (event) => {
 
             // Clear any existing messages and display the fetched history
             messageArea.innerHTML = '';
+            let lastMessage = null;
             history.forEach(message => {
-                // We reuse the same displayMessage function that our WebSocket uses
-                // so the messages look identical.
+                addDateSeparatorIfNeeded(message, lastMessage, messageArea); // ✅ ADD THIS
                 displayMessage(message);
+                lastMessage = message; // ✅ ADD THIS
             });
-
         } catch (error) {
             console.error(error);
             messageArea.innerHTML = '<li>Could not load chat history.</li>';
@@ -1334,6 +1353,31 @@ function formatHistoryTimestamp(isoString) {
     };
 
     return date.toLocaleTimeString([], options);
+}
+
+    function formatDateSeparator(date) {
+    const today = new Date();
+    const yesterday = new Date();
+    yesterday.setDate(yesterday.getDate() - 1);
+
+    if (date.toLocaleDateString() === today.toLocaleDateString()) {
+        return 'Today';
+    }
+    if (date.toLocaleDateString() === yesterday.toLocaleDateString()) {
+        return 'Yesterday';
+    }
+    return date.toLocaleDateString();
+}
+
+function addDateSeparatorIfNeeded(message, lastMessage, chatArea) {
+    const messageDate = new Date(message.timestamp);
+    // If there was no last message or the day is different, add a separator
+    if (!lastMessage || new Date(lastMessage.timestamp).toLocaleDateString() !== messageDate.toLocaleDateString()) {
+        const separator = document.createElement('li');
+        separator.className = 'date-separator';
+        separator.textContent = formatDateSeparator(messageDate);
+        chatArea.appendChild(separator);
+    }
 }
 
 </script>
