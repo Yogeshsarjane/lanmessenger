@@ -114,4 +114,12 @@ public class AdminController {
 
         return ResponseEntity.ok(history);
     }
+    @DeleteMapping("/faults/{faultId}")
+    public ResponseEntity<Void> deleteFault(@PathVariable Long faultId) {
+        // We can add a check to ensure the fault exists, but for simplicity,
+        // we'll just ask the repository to delete it.
+        // If it doesn't exist, this will do nothing and won't cause an error.
+        faultRepository.deleteById(faultId);
+        return ResponseEntity.ok().build();
+    }
 }

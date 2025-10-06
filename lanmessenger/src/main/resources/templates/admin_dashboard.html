@@ -1492,16 +1492,45 @@ function addDateSeparatorIfNeeded(message, lastMessage, chatArea) {
             const date = new Date(fault.submissionTimestamp);
             const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
 
+            // ✅ ADD a 'Remove' button to the last table cell
             row.innerHTML = `
                 <td>${formattedDate}</td>
                 <td>${fault.reporterUsername}</td>
                 <td>${fault.subject}</td>
                 <td>${fault.priority}</td>
                 <td>${fault.category}</td>
-                <td><button class="details-btn">View</button></td>
+                <td>
+                    <button class="details-btn">View</button>
+                    <button class="remove-fault-btn remove-button">Remove</button>
+                </td>
             `;
-             row.querySelector('.details-btn').addEventListener('click', () => {
-            showFaultDetails(fault);
+
+            // This is your existing listener for the 'View' button
+            row.querySelector('.details-btn').addEventListener('click', () => {
+                showFaultDetails(fault);
+            });
+
+            // ✅ ADD the event listener for the new 'Remove' button
+            row.querySelector('.remove-fault-btn').addEventListener('click', async () => {
+                // 1. Show a confirmation dialog
+                if (confirm(`Are you sure you want to remove the fault: "${fault.subject}"?`)) {
+                    try {
+                        // 2. Send the DELETE request to the backend
+                        const response = await fetch(`/api/admin/faults/${fault.id}`, {
+                            method: 'DELETE'
+                        });
+
+                        if (response.ok) {
+                            // 3. If successful, remove the row from the UI for immediate feedback
+                            row.remove();
+                        } else {
+                            alert('Error: Could not remove the fault report.');
+                        }
+                    } catch (error) {
+                        console.error('Failed to remove fault:', error);
+                        alert('Error: Could not connect to the server.');
+                    }
+                }
             });
         });
 
