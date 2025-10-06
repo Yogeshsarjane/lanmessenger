@@ -1233,16 +1233,30 @@ privateMessageForm.addEventListener('submit', (event) => {
         }).join('');
     }
 
-    function renderFileHistory(logs) {
-        if (!logs || logs.length === 0) {
-            logList.innerHTML = '<p>No file history found for this user.</p>';
-            return;
+    // In the <script> tag of admin_dashboard.html
+
+        function renderFileHistory(logs) {
+            if (!logs || logs.length === 0) {
+                logList.innerHTML = '<li><p class="history-empty-prompt">No file history found for this user.</p></li>';
+                return;
+            }
+
+            logList.innerHTML = logs.map(log => {
+                const time = new Date(log.timestamp).toLocaleTimeString();
+
+                // Create a clickable link for the filename.
+                // The link points to our download API, using the unique 'storedFilename'.
+                // The text of the link is the 'originalFilename' that the user sees.
+                const fileLink = `<a href="/api/files/download/${log.storedFilename}" target="_blank">${log.originalFilename}</a>`;
+
+                return `<li class="log-item">
+                            <span class="timestamp">${time}</span>
+                            ${log.sender} sent
+                            <span class="recipient">${fileLink}</span>
+                            to ${log.recipient}
+                        </li>`;
+            }).join('');
         }
-        logList.innerHTML = logs.map(log => {
-            const time = new Date(log.timestamp).toLocaleTimeString();
-            return `<li class="log-item"><span class="timestamp">${time}</span> ${log.sender} sent <span class="recipient">${log.originalFilename}</span> to ${log.recipient}</li>`;
-        }).join('');
-    }
 
 
     function autoScrollView(element) {
