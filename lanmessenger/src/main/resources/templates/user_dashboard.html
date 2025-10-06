@@ -509,6 +509,24 @@
             position: relative;
             transform: translateX(-50%);
         }
+        /* Add these new styles to your CSS */
+
+/* Set a fixed size for the thumbnail container */
+.preview-thumbnail-styled {
+    width: 60px;
+    height: 60px;
+    flex-shrink: 0; /* Prevents the container from shrinking */
+    background-color: var(--received-bubble-background);
+    border-radius: 6px;
+    overflow: hidden; /* Hides any part of the image that overflows */
+}
+
+/* This is the key part: Style the image INSIDE the container */
+.preview-thumbnail-styled img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover; /* This is the magic property! */
+}
 
     </style>
 </head>
