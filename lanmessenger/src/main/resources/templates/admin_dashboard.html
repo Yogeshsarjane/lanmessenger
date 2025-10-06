@@ -500,6 +500,40 @@
             transform: translateX(-50%);
         }
 
+        .modal {
+            display: none; /* Hidden by default */
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            overflow: auto;
+            background-color: rgba(0,0,0,0.5); /* Black with opacity */
+        }
+        .modal-content {
+            background-color: #fefefe;
+            margin: 10% auto;
+            padding: 20px;
+            border: 1px solid #888;
+            width: 60%;
+            max-width: 700px;
+            border-radius: 8px;
+            position: relative;
+        }
+        .modal-close-btn {
+            color: #aaa;
+            position: absolute;
+            top: 10px;
+            right: 20px;
+            font-size: 28px;
+            font-weight: bold;
+            cursor: pointer;
+        }
+        .modal-close-btn:hover {
+            color: black;
+        }
+
     </style>
 </head>
 <body>
@@ -580,6 +614,29 @@
                     </aside>
                 </div>
             </div>
+            <div id="faults-view" class="view-content" style="display: none; padding: 20px;">
+                <div class="panel">
+                    <div class="panel-header">
+                        <h3>Submitted Fault Reports</h3>
+                    </div>
+                    <div class="table-wrapper">
+                        <table>
+                            <thead>
+                            <tr>
+                                <th>Date/Time</th>
+                                <th>Reported By</th>
+                                <th>Subject</th>
+                                <th>Priority</th>
+                                <th>Category</th>
+                                <th>Details</th>
+                            </tr>
+                            </thead>
+                            <tbody id="fault-table-body">
+                            </tbody>
+                        </table>
+                    </div>
+                </div>
+            </div>
         </div>
 
         <aside class="admin-sidebar">
@@ -624,6 +681,24 @@
                 </div>
             </section>
         </aside>
+        <div id="fault-details-modal" class="modal">
+            <div class="modal-content">
+                <span class="modal-close-btn">&times;</span>
+                <h3 id="modal-subject"></h3>
+                <p><strong>Reported by:</strong> <span id="modal-reporter"></span></p>
+                <p><strong>Date:</strong> <span id="modal-date"></span></p>
+                <p><strong>Priority:</strong> <span id="modal-priority"></span> | <strong>Category:</strong> <span id="modal-category"></span></p>
+                <hr>
+                <h4>Description:</h4>
+                <p id="modal-description" style="white-space: pre-wrap;"></p>
+                <div id="modal-screenshot-container" style="display: none;">
+                    <h4>Screenshot:</h4>
+                    <a id="modal-screenshot-link" href="#" target="_blank">
+                        <img id="modal-screenshot-img" src="" alt="Screenshot" style="max-width: 100%; border: 1px solid #ccc;">
+                    </a>
+                </div>
+            </div>
+        </div>
     </div>
     <div class="version-label">v1.0.4</div>
 </div>
@@ -677,6 +752,10 @@
     const incomingFilesList = document.getElementById('incoming-files-list');
     const incomingFileCount = document.getElementById('incoming-file-count');
     const noFilesPrompt = document.getElementById('no-files-prompt');
+    const faultsView = document.getElementById('faults-view');
+    const faultTableBody = document.getElementById('fault-table-body');
+    const faultDetailsModal = document.getElementById('fault-details-modal');
+    const modalCloseBtn = document.querySelector('.modal-close-btn');
 
     let selectedFile = null;
     let currentPrivateChatTarget = null;
@@ -723,24 +802,25 @@
 
     // --- Tab Switching Logic ---
     chatTab.addEventListener('click', () => {
-        chatView.style.display = 'flex'; pchatView.style.display = 'none'; filesView.style.display = 'none';
+        chatView.style.display = 'flex'; pchatView.style.display = 'none'; filesView.style.display = 'none'; faultsView.style.display = 'none';
         chatTab.classList.add('active'); pchatTab.classList.remove('active'); filesTab.classList.remove('active'); faultsTab.classList.remove('active');
         chatTab.classList.remove('has-unread');
     });
     pchatTab.addEventListener('click', () => {
-        chatView.style.display = 'none'; pchatView.style.display = 'flex'; filesView.style.display = 'none';
+        chatView.style.display = 'none'; pchatView.style.display = 'flex'; filesView.style.display = 'none'; faultsView.style.display = 'none';
         chatTab.classList.remove('active'); pchatTab.classList.add('active'); filesTab.classList.remove('active'); faultsTab.classList.remove('active');
         pchatTab.classList.remove('has-unread');
     });
     filesTab.addEventListener('click', () => {
-        chatView.style.display = 'none'; pchatView.style.display = 'none'; filesView.style.display = 'flex';
+        chatView.style.display = 'none'; pchatView.style.display = 'none'; filesView.style.display = 'flex'; faultsView.style.display = 'none';
         chatTab.classList.remove('active'); pchatTab.classList.remove('active'); filesTab.classList.add('active'); faultsTab.classList.remove('active');
         filesTab.classList.remove('has-unread');
     });
     faultsTab.addEventListener('click', () => {
-        chatView.style.display = 'none'; pchatView.style.display = 'none'; filesView.style.display = 'none';
+        chatView.style.display = 'none'; pchatView.style.display = 'none'; filesView.style.display = 'none'; faultsView.style.display = 'flex';
         chatTab.classList.remove('active'); pchatTab.classList.remove('active'); filesTab.classList.remove('active'); faultsTab.classList.add('active');
         faultsTab.classList.remove('has-unread');
+        fetchAndDisplayFaults();
     });
 
     // --- New File Upload Logic ---
@@ -1379,6 +1459,74 @@ function addDateSeparatorIfNeeded(message, lastMessage, chatArea) {
         chatArea.appendChild(separator);
     }
 }
+    async function fetchAndDisplayFaults() {
+    faultTableBody.innerHTML = '<tr><td colspan="6">Loading...</td></tr>';
+    try {
+        const response = await fetch('/api/admin/faults');
+        if (!response.ok) throw new Error('Failed to fetch faults');
+        const faults = await response.json();
+
+        faultTableBody.innerHTML = ''; // Clear loading message
+
+        if (faults.length === 0) {
+            faultTableBody.innerHTML = '<tr><td colspan="6">No fault reports have been submitted.</td></tr>';
+            return;
+        }
+
+        faults.forEach(fault => {
+            const row = faultTableBody.insertRow();
+            const date = new Date(fault.submissionTimestamp);
+            const formattedDate = date.toLocaleDateString() + ' ' + date.toLocaleTimeString();
+
+            row.innerHTML = `
+                <td>${formattedDate}</td>
+                <td>${fault.reporterUsername}</td>
+                <td>${fault.subject}</td>
+                <td>${fault.priority}</td>
+                <td>${fault.category}</td>
+                <td><button class="details-btn">View</button></td>
+            `;
+             row.querySelector('.details-btn').addEventListener('click', () => {
+            showFaultDetails(fault);
+            });
+        });
+
+    } catch (error) {
+        console.error(error);
+        faultTableBody.innerHTML = '<tr><td colspan="6" style="color: red;">Error loading fault reports.</td></tr>';
+    }
+}
+            function showFaultDetails(fault) {
+                document.getElementById('modal-subject').textContent = fault.subject;
+                document.getElementById('modal-reporter').textContent = fault.reporterUsername;
+                document.getElementById('modal-date').textContent = new Date(fault.submissionTimestamp).toLocaleString();
+                document.getElementById('modal-priority').textContent = fault.priority;
+                document.getElementById('modal-category').textContent = fault.category;
+                document.getElementById('modal-description').textContent = fault.description;
+
+                const screenshotContainer = document.getElementById('modal-screenshot-container');
+                if (fault.screenshotFilename) {
+                    // If there's a screenshot, build the URL and show the image
+                    const imageUrl = `/api/files/download/${fault.screenshotFilename}`;
+                    document.getElementById('modal-screenshot-img').src = imageUrl;
+                    document.getElementById('modal-screenshot-link').href = imageUrl;
+                    screenshotContainer.style.display = 'block';
+                } else {
+                    screenshotContainer.style.display = 'none';
+                }
+
+                // Show the modal
+                faultDetailsModal.style.display = 'block';
+            }
+            // 4. Add the logic to close the modal
+        modalCloseBtn.onclick = () => {
+            faultDetailsModal.style.display = 'none';
+        }
+        window.onclick = (event) => {
+            if (event.target == faultDetailsModal) {
+                faultDetailsModal.style.display = 'none';
+            }
+        }
 
 </script>
 </body>

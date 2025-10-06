@@ -12,6 +12,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.PageRequest; // <-- IMPORT
 import org.springframework.data.domain.Pageable;    // <-- IMPORT
 import java.security.Principal;                   // <-- IMPORT
+import com.lanmessenger.model.Fault;
+import com.lanmessenger.repository.FaultRepository;
 
 import java.util.Collections;
 import java.util.List;
@@ -26,17 +28,20 @@ public class AdminController {
     private final AppConfigService appConfigService;
     private final ChatMessageLogRepository chatLogRepository;
     private final FileLogRepository fileLogRepository;
+    private final FaultRepository faultRepository;
 
     // 2. Create one constructor for Spring to inject all dependencies.
     // The @Autowired annotation is optional here, but good for clarity.
     public AdminController(UserService userService,
                            AppConfigService appConfigService,
                            ChatMessageLogRepository chatLogRepository,
-                           FileLogRepository fileLogRepository) {
+                           FileLogRepository fileLogRepository,
+                           FaultRepository faultRepository) {
         this.userService = userService;
         this.appConfigService = appConfigService;
         this.chatLogRepository = chatLogRepository;
         this.fileLogRepository = fileLogRepository;
+        this.faultRepository = faultRepository;
     }
 
     // 3. All your existing endpoint methods remain exactly the same.
@@ -50,7 +55,11 @@ public class AdminController {
         return Collections.singletonMap("visibility", appConfigService.getUserListVisibility().name());
     }
 
-
+    @GetMapping("/faults")
+    public ResponseEntity<List<Fault>> getAllFaults() {
+        List<Fault> faults = faultRepository.findAllByOrderBySubmissionTimestampDesc();
+        return ResponseEntity.ok(faults);
+    }
 
     @PostMapping("/settings/visibility")
     public ResponseEntity<Void> setVisibility(@RequestBody Map<String, String> payload) {
