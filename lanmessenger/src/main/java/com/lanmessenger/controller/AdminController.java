@@ -14,6 +14,11 @@ import org.springframework.data.domain.Pageable;    // <-- IMPORT
 import java.security.Principal;                   // <-- IMPORT
 import com.lanmessenger.model.Fault;
 import com.lanmessenger.repository.FaultRepository;
+import com.lanmessenger.service.PdfGenerationService;
+import org.springframework.core.io.InputStreamResource;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.MediaType;
+import java.io.ByteArrayInputStream;
 
 import java.util.Collections;
 import java.util.List;
@@ -29,6 +34,7 @@ public class AdminController {
     private final ChatMessageLogRepository chatLogRepository;
     private final FileLogRepository fileLogRepository;
     private final FaultRepository faultRepository;
+    private final PdfGenerationService pdfGenerationService; // <-- Add dependency
 
     // 2. Create one constructor for Spring to inject all dependencies.
     // The @Autowired annotation is optional here, but good for clarity.
@@ -36,12 +42,14 @@ public class AdminController {
                            AppConfigService appConfigService,
                            ChatMessageLogRepository chatLogRepository,
                            FileLogRepository fileLogRepository,
-                           FaultRepository faultRepository) {
+                           FaultRepository faultRepository,
+                           PdfGenerationService pdfGenerationService) {
         this.userService = userService;
         this.appConfigService = appConfigService;
         this.chatLogRepository = chatLogRepository;
         this.fileLogRepository = fileLogRepository;
         this.faultRepository = faultRepository;
+        this.pdfGenerationService = pdfGenerationService; // <-- And here
     }
 
     // 3. All your existing endpoint methods remain exactly the same.
@@ -121,5 +129,24 @@ public class AdminController {
         // If it doesn't exist, this will do nothing and won't cause an error.
         faultRepository.deleteById(faultId);
         return ResponseEntity.ok().build();
+    }
+    // ✅ ADD THIS NEW DOWNLOAD ENDPOINT
+    @GetMapping("/faults/download")
+    public ResponseEntity<InputStreamResource> downloadFaultsPdf() {
+        // 1. Fetch all faults from the database
+        List<Fault> faults = faultRepository.findAllByOrderBySubmissionTimestampDesc();
+
+        // 2. Generate the PDF in memory
+        ByteArrayInputStream bis = pdfGenerationService.generateFaultsPdf(faults);
+
+        // 3. Set headers to trigger a download in the browser
+        HttpHeaders headers = new HttpHeaders();
+        headers.add("Content-Disposition", "attachment; filename=fault_reports.pdf");
+
+        return ResponseEntity
+                .ok()
+                .headers(headers)
+                .contentType(MediaType.APPLICATION_PDF)
+                .body(new InputStreamResource(bis));
     }
 }

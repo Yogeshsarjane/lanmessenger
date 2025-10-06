@@ -9,6 +9,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.messaging.simp.SimpMessagingTemplate;
 
 import java.security.Principal;
 import java.time.LocalDateTime;
@@ -19,10 +20,13 @@ public class FaultController {
 
     private final FaultRepository faultRepository;
     private final FileStorageService fileStorageService;
+    private final SimpMessagingTemplate messagingTemplate;
 
-    public FaultController(FaultRepository faultRepository, FileStorageService fileStorageService) {
+    public FaultController(FaultRepository faultRepository, FileStorageService fileStorageService,
+                           SimpMessagingTemplate messagingTemplate) {
         this.faultRepository = faultRepository;
         this.fileStorageService = fileStorageService;
+        this.messagingTemplate = messagingTemplate;
     }
 
     @PostMapping
@@ -47,7 +51,8 @@ public class FaultController {
             fault.setScreenshotFilename(filename);
         }
 
-        faultRepository.save(fault);
+        Fault savedFault = faultRepository.save(fault);
+        messagingTemplate.convertAndSend("/topic/admin/faults", savedFault);
         return ResponseEntity.ok().build();
     }
 }

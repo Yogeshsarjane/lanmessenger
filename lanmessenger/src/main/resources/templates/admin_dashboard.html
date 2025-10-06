@@ -618,6 +618,7 @@
                 <div class="panel">
                     <div class="panel-header">
                         <h3>Submitted Fault Reports</h3>
+                        <button id="download-faults-pdf-btn" class="upload-button" style="width: auto; height: 36px;">Download PDF</button>
                     </div>
                     <div class="table-wrapper">
                         <table>
@@ -756,6 +757,7 @@
     const faultTableBody = document.getElementById('fault-table-body');
     const faultDetailsModal = document.getElementById('fault-details-modal');
     const modalCloseBtn = document.querySelector('.modal-close-btn');
+    const downloadPdfBtn = document.getElementById('download-faults-pdf-btn');
 
     let selectedFile = null;
     let currentPrivateChatTarget = null;
@@ -975,6 +977,7 @@ privateMessageForm.addEventListener('submit', (event) => {
         stompClient.subscribe('/topic/public', onPublicMessageReceived);
         stompClient.subscribe('/user/' + adminUsername + '/queue/private', onPrivateMessageReceived);
         stompClient.subscribe('/user/' + adminUsername + '/queue/files', onFileReceived);
+        stompClient.subscribe('/topic/admin/faults', onFaultReceived);
         // Announce that this user has joined
     const currentUsername = typeof adminUsername !== 'undefined' ? adminUsername : username;
     stompClient.send("/app/chat.addUser", {}, JSON.stringify({ sender: currentUsername, type: 'JOIN' }));
@@ -1570,6 +1573,20 @@ function addDateSeparatorIfNeeded(message, lastMessage, chatArea) {
                 faultDetailsModal.style.display = 'none';
             }
         }
+    if (downloadPdfBtn) {
+    downloadPdfBtn.addEventListener('click', () => {
+        // This simply tells the browser to navigate to the download URL
+        window.location.href = '/api/admin/faults/download';
+    });
+}
+    function onFaultReceived(payload) {
+    // We received a new fault. If we aren't already on the faults tab, show the indicator.
+    if (!faultsTab.classList.contains('active')) {
+        faultsTab.classList.add('has-unread');
+    }
+    // Optionally, if the user IS on the faults tab, you could automatically refresh the list
+    // by calling fetchAndDisplayFaults() here.
+}
 
 </script>
 </body>
