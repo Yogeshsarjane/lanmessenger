@@ -686,7 +686,7 @@
         </div>
 
     </main>
-    <div class="version-label">v1.0.4</div>
+    <div class="version-label">v1.0.5</div>
 </div>
 
 <script th:src="@{/js/sockjs.min.js}"></script>
@@ -1174,54 +1174,57 @@
         screenshotFilename.textContent = screenshotInput.files[0] ? screenshotInput.files[0].name : 'No file chosen';
     });
 
-    faultForm.addEventListener('submit', async (e) => {
-        e.preventDefault();
+        faultForm.addEventListener('submit', async (e) => {
+            e.preventDefault(); // This is important, it stops the form from submitting immediately
 
-        // 1. Provide immediate UI feedback: Show loading state
-        submitBtn.disabled = true;
-        submitBtn.querySelector('.btn-text').style.display = 'none';
-        submitBtn.querySelector('.spinner').style.display = 'block';
-        statusMsg.style.display = 'none'; // Hide previous messages
+            // ✅ WRAP the existing logic in a confirm() check
+            if (confirm("Are you sure you want to submit this fault report?")) {
 
-        // 2. Collect data using FormData for file uploads
-        const formData = new FormData();
-        formData.append('subject', document.getElementById('fault-subject').value);
-        formData.append('category', document.getElementById('fault-category').value);
-        formData.append('priority', document.querySelector('input[name="priority"]:checked').value);
-        formData.append('description', document.getElementById('fault-description').value);
+                // --- All of your previous submission logic now goes inside this 'if' block ---
 
-        // Append the file only if one is selected
-        if (screenshotInput.files[0]) {
-            formData.append('screenshot', screenshotInput.files[0]);
+                // 1. Provide immediate UI feedback: Show loading state
+                submitBtn.disabled = true;
+                submitBtn.querySelector('.btn-text').style.display = 'none';
+                submitBtn.querySelector('.spinner').style.display = 'block';
+                statusMsg.style.display = 'none';
+
+                // 2. Collect data using FormData
+                const formData = new FormData();
+                formData.append('subject', document.getElementById('fault-subject').value);
+                formData.append('category', document.getElementById('fault-category').value);
+                formData.append('priority', document.querySelector('input[name="priority"]:checked').value);
+                formData.append('description', document.getElementById('fault-description').value);
+                if (screenshotInput.files[0]) {
+                    formData.append('screenshot', screenshotInput.files[0]);
+                }
+
+                // 3. Send the request
+                try {
+                    const response = await fetch('/api/faults', {
+                        method: 'POST',
+                        body: formData
+                    });
+
+                    if (response.ok) {
+                        statusMsg.textContent = 'Report submitted successfully. Thank you!';
+                        statusMsg.className = 'alert alert-success';
+                        faultForm.reset();
+                        screenshotFilename.textContent = 'No file chosen';
+                    } else {
+                        const errorData = await response.json();
+                        throw new Error(errorData.message || 'Submission failed. Please try again.');
+                    }
+                } catch (error) {
+                    statusMsg.textContent = `Error: ${error.message}`;
+                    statusMsg.className = 'alert alert-danger';
+                } finally {
+                    // 4. Restore the button to its original state
+                    submitBtn.disabled = false;
+                    submitBtn.querySelector('.btn-text').style.display = 'block';
+                    submitBtn.querySelector('.spinner').style.display = 'none';
+                }
         }
-
-        try {
-            const response = await fetch('/api/faults', {
-                method: 'POST',
-                body: formData // No Content-Type header needed; browser sets it for FormData
-            });
-
-            if (response.ok) {
-                // 3. Show success message
-                statusMsg.textContent = 'Report submitted successfully. Thank you!';
-                statusMsg.className = 'alert alert-success';
-                faultForm.reset(); // Clear the form
-                screenshotFilename.textContent = 'No file chosen'; // Reset filename display
-            } else {
-                // 4. Handle server errors
-                const errorData = await response.json();
-                throw new Error(errorData.message || 'Submission failed. Please try again.');
-            }
-        } catch (error) {
-            // 5. Handle network or other errors
-            statusMsg.textContent = `Error: ${error.message}`;
-            statusMsg.className = 'alert alert-danger';
-        } finally {
-            // 6. Restore the button to its original state
-            submitBtn.disabled = false;
-            submitBtn.querySelector('.btn-text').style.display = 'block';
-            submitBtn.querySelector('.spinner').style.display = 'none';
-        }
+        // If the user clicks "Cancel", the code inside the 'if' block is simply skipped.
     });
 
     // --- Add these new element references ---
