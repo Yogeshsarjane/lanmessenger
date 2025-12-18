@@ -1033,73 +1033,63 @@ privateMessageForm.addEventListener('submit', (event) => {
 
     // In admin_dashboard.html
 
-function onUserListReceived(payload) {
-    let users = JSON.parse(payload.body);
-    const currentUsername = typeof adminUsername !== 'undefined' ? adminUsername : username;
+    // --- REPLACE IN admin_dashboard.html ---
 
-    // ✅ 1. SORTING LOGIC: Online users first, then Connecting, then Offline
-    const statusPriority = { 'ONLINE': 1, 'CONNECTING': 2, 'OFFLINE': 3 };
-    users.sort((a, b) => {
-        const priorityA = statusPriority[a.status] || 4;
-        const priorityB = statusPriority[b.status] || 4;
-        return priorityA - priorityB;
-    });
+    function onUserListReceived(payload) {
+        let users = JSON.parse(payload.body);
+        const currentUsername = typeof adminUsername !== 'undefined' ? adminUsername : 'admin';
 
-    // ✅ 2. FIX FOR ADMIN TABLE: This line was missing! It updates the main table.
-    if (typeof renderUserTable === 'function') {
-        renderUserTable(users);
-    }
+        // 1. Sort Users (Online first)
+        const statusPriority = { 'ONLINE': 1, 'CONNECTING': 2, 'OFFLINE': 3 };
+        users.sort((a, b) => (statusPriority[a.status] || 4) - (statusPriority[b.status] || 4));
 
-    // Filter out current user for the private chat lists
-    const otherUsers = users.filter(user => user.username !== currentUsername);
+        // 2. Update Admin Table (if renderUserTable exists)
+        if (typeof renderUserTable === 'function') {
+            renderUserTable(users);
+        }
 
-    // --- Logic for Private Chat List ---
-    if (privateChatUserList) {
-        privateChatUserList.innerHTML = '';
-        otherUsers.forEach(user => {
-            const li = document.createElement('li');
-            li.dataset.username = user.username;
-            li.textContent = user.username;
-            li.onclick = () => startPrivateChat(user.username);
+        // 3. Update Private Chat List
+        const otherUsers = users.filter(user => user.username !== currentUsername);
+        if (privateChatUserList) {
+            privateChatUserList.innerHTML = '';
+            otherUsers.forEach(user => {
+                const li = document.createElement('li');
+                li.dataset.username = user.username;
+                li.textContent = user.username;
+                li.onclick = () => startPrivateChat(user.username);
 
-            // Add classes for styling
-            if (user.status === 'ONLINE') {
-                li.classList.add('user-online'); // New class for online
-            } else if (user.status === 'OFFLINE') {
-                li.classList.add('user-offline');
+                if (user.status === 'ONLINE') li.classList.add('user-online');
+                else if (user.status === 'OFFLINE') li.classList.add('user-offline');
+
+                privateChatUserList.appendChild(li);
+            });
+        }
+
+        // ✅ FIX: Find the dropdown HERE so it is always defined
+        const recipientDropdown = document.getElementById('fileRecipient');
+
+        // Only try to populate if the dropdown actually exists in the HTML
+        if (recipientDropdown) {
+            const selectedRecipient = recipientDropdown.value;
+            recipientDropdown.innerHTML = '<option value="">-- Select a user --</option>';
+
+            otherUsers.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.username;
+                option.textContent = user.username + (user.status === 'OFFLINE' ? ' (Offline)' : '');
+                if (user.status === 'OFFLINE') option.style.color = '#999';
+                recipientDropdown.appendChild(option);
+            });
+
+            // Restore previous selection if it's still valid
+            if (recipientDropdown.querySelector(`option[value="${selectedRecipient}"]`)) {
+                recipientDropdown.value = selectedRecipient;
             }
-
-            privateChatUserList.appendChild(li);
-        });
-    }
-
-    // --- Logic for File Sharing Recipient Dropdown ---
-    if (recipientSelect) {
-        // We only allow file sharing with Online/Connecting users
-        const onlineOrConnectingUsers = users.filter(user =>
-            user.username !== currentUsername && (user.status === 'ONLINE' || user.status === 'CONNECTING')
-        );
-        const selectedRecipient = recipientSelect.value;
-        recipientSelect.innerHTML = '<option value="">-- Select a user --</option>';
-
-        onlineOrConnectingUsers.forEach(user => {
-            const option = document.createElement('option');
-            option.value = user.username;
-            option.textContent = user.username;
-            recipientSelect.appendChild(option);
-        });
-
-        // Safety check before restoring selection
-        if (recipientSelect.querySelector(`option[value="${selectedRecipient}"]`)) {
-            recipientSelect.value = selectedRecipient;
+        } else {
+            console.warn("⚠️ Warning: Could not find <select id='fileRecipient'> in the HTML. Check your IDs.");
         }
     }
 
-    // Update active chat highlight
-    if (typeof updateActiveChatUser === 'function') {
-        updateActiveChatUser();
-    }
-}
         function onPublicMessageReceived(payload) {
         const message = JSON.parse(payload.body);
         if (!chatTab.classList.contains('active')) chatTab.classList.add('has-unread');
