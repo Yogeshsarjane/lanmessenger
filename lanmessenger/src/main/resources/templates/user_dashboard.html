@@ -100,6 +100,7 @@
             height: 100%;
             box-sizing: border-box;
             overflow: hidden;
+            background-color: #d3d3d3;
         }
 
         .chat-dashboard-view {
@@ -139,6 +140,7 @@
             padding: 15px 20px;
             border-top: 1px solid var(--border-color);
             flex-shrink: 0;
+            background-color: #f0f2f5;
         }
 
         .chat-input {
@@ -238,11 +240,16 @@
             width: 100%;
             background: linear-gradient(#a44ffe, #9f91cf);
             color: #0b0303;
-            padding: 2px;
             text-align: center;
             border-radius: 5%;
+
+
+        }
+        .app-title{
             font-weight: bold;
-            font-size: 20px;
+            font-size: 23px;
+
+            padding-bottom: 10px;
         }
         /* --- Professional Fault Registration UI Styles --- */
         .view-wrapper {
@@ -452,11 +459,14 @@
             border: none !important;
         }
         .logo {
-            width: 150px; /* Set your desired width */
+            width: 200px; /* Set your desired width */
             height: auto;  /* 'auto' maintains the original aspect ratio */
-            display: block;
+            display: flex;
             margin-left: auto;
             margin-right: auto;
+            padding-top:10px;
+
+
         }
         .version-label {
             position: fixed;
@@ -556,7 +566,7 @@
         <nav class="sidebar-nav">
 
             <header class="app-header">
-                <img th:src="@{/images/logo2_wobg.png}"  alt="Company Logo" class="logo"/>
+                <img th:src="@{/images/bel_logo.png}"  alt="Company Logo" class="logo"/>
                 <h3 class="app-title">NISHAN SANDESH</h3>
             </header>
             <hr>
