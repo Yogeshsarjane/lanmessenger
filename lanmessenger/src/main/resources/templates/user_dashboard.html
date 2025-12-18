@@ -909,62 +909,72 @@
 
     // In user_dashboard.html
 
-function onUserListReceived(payload) {
-    let users = JSON.parse(payload.body);
-    const currentUsername = username; // Simplified for user side
+    // --- REPLACE THIS IN user_dashboard.html ---
 
-    // ✅ 1. SORTING LOGIC
-    const statusPriority = { 'ONLINE': 1, 'CONNECTING': 2, 'OFFLINE': 3 };
-    users.sort((a, b) => {
-        const priorityA = statusPriority[a.status] || 4;
-        const priorityB = statusPriority[b.status] || 4;
-        return priorityA - priorityB;
-    });
+    function onUserListReceived(payload) {
+        let users = JSON.parse(payload.body);
+        const currentUsername = username; // Users know their own name
 
-    const otherUsers = users.filter(user => user.username !== currentUsername);
+        // 1. Sort Users: Online -> Connecting -> Offline
+        const statusPriority = { 'ONLINE': 1, 'CONNECTING': 2, 'OFFLINE': 3 };
+        users.sort((a, b) => (statusPriority[a.status] || 4) - (statusPriority[b.status] || 4));
 
-    // --- Logic for Private Chat List ---
-    if (privateChatUserList) {
-        privateChatUserList.innerHTML = '';
-        otherUsers.forEach(user => {
-            const li = document.createElement('li');
-            li.dataset.username = user.username;
-            li.textContent = user.username;
-            li.onclick = () => startPrivateChat(user.username);
+        // 2. Update Private Chat List (Left Sidebar)
+        // (We keep your existing logic here, or ensure it handles offline users nicely)
+        const otherUsers = users.filter(user => user.username !== currentUsername);
 
-            if (user.status === 'ONLINE') {
-                li.classList.add('user-online');
-            } else if (user.status === 'OFFLINE') {
-                li.classList.add('user-offline');
+        if (typeof privateChatUserList !== 'undefined' && privateChatUserList) {
+            privateChatUserList.innerHTML = '';
+            otherUsers.forEach(user => {
+                const li = document.createElement('li');
+                li.dataset.username = user.username;
+                li.textContent = user.username;
+                li.onclick = () => startPrivateChat(user.username);
+
+                if (user.status === 'ONLINE') {
+                    li.classList.add('user-online');
+                } else if (user.status === 'OFFLINE') {
+                    li.classList.add('user-offline');
+                }
+                privateChatUserList.appendChild(li);
+            });
+        }
+
+        // ✅ 3. UPDATE FILE SHARING DROPDOWN (The key change!)
+        // We target 'recipient-select' (based on your HTML) OR 'fileRecipient' as a backup
+        const recipientDropdown = document.getElementById('recipient-select') || document.getElementById('fileRecipient');
+
+        if (recipientDropdown) {
+            const selectedRecipient = recipientDropdown.value;
+            recipientDropdown.innerHTML = '<option value="" disabled selected>Select User</option>';
+
+            // ✅ CHANGE: We loop through ALL 'otherUsers', not just the online ones.
+            otherUsers.forEach(user => {
+                const option = document.createElement('option');
+                option.value = user.username;
+
+                // Add status text so users know if the recipient is offline
+                option.textContent = user.username + (user.status === 'OFFLINE' ? ' (Offline)' : '');
+
+                // Grey out offline users visually
+                if (user.status === 'OFFLINE') {
+                    option.style.color = '#999';
+                }
+
+                recipientDropdown.appendChild(option);
+            });
+
+            // Restore previous selection if valid
+            if (selectedRecipient && recipientDropdown.querySelector(`option[value="${selectedRecipient}"]`)) {
+                recipientDropdown.value = selectedRecipient;
             }
-            privateChatUserList.appendChild(li);
-        });
-    }
+        }
 
-    // --- Logic for File Sharing Recipient Dropdown ---
-    if (recipientSelect) {
-        const onlineOrConnectingUsers = users.filter(user =>
-            user.username !== currentUsername && (user.status === 'ONLINE' || user.status === 'CONNECTING')
-        );
-        const selectedRecipient = recipientSelect.value;
-        recipientSelect.innerHTML = '<option value="">-- Select a user --</option>';
-
-        onlineOrConnectingUsers.forEach(user => {
-            const option = document.createElement('option');
-            option.value = user.username;
-            option.textContent = user.username;
-            recipientSelect.appendChild(option);
-        });
-
-        if (recipientSelect.querySelector(`option[value="${selectedRecipient}"]`)) {
-            recipientSelect.value = selectedRecipient;
+        // 4. Update active chat highlight
+        if (typeof updateActiveChatUser === 'function') {
+            updateActiveChatUser();
         }
     }
-
-    if (typeof updateActiveChatUser === 'function') {
-        updateActiveChatUser();
-    }
-}
 
     function onPublicMessageReceived(payload) {
         const message = JSON.parse(payload.body);

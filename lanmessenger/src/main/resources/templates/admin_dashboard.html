@@ -1066,7 +1066,7 @@ privateMessageForm.addEventListener('submit', (event) => {
         }
 
         // ✅ FIX: Find the dropdown HERE so it is always defined
-        const recipientDropdown = document.getElementById('fileRecipient');
+        const recipientDropdown = document.getElementById('recipient-select-v2');
 
         // Only try to populate if the dropdown actually exists in the HTML
         if (recipientDropdown) {
@@ -1086,7 +1086,7 @@ privateMessageForm.addEventListener('submit', (event) => {
                 recipientDropdown.value = selectedRecipient;
             }
         } else {
-            console.warn("⚠️ Warning: Could not find <select id='fileRecipient'> in the HTML. Check your IDs.");
+            console.warn("⚠️ Warning: Could not find <select id='recipient-select-v2'> in the HTML. Check your IDs.");
         }
     }
 
