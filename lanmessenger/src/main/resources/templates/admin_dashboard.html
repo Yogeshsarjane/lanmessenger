@@ -938,7 +938,7 @@ privateMessageForm.addEventListener('submit', (event) => {
     // --- Data Fetching and Initial Setup ---
     async function fetchAndDisplayUsers() {
         try {
-            const response = await fetch('http://localhost:8080/api/admin/users');
+            const response = await fetch('/api/admin/users');
             if (!response.ok) throw new Error('Fetch failed');
             const users = await response.json();
             renderUserTable(users);
@@ -952,14 +952,14 @@ privateMessageForm.addEventListener('submit', (event) => {
     }
     async function fetchInitialSettings() {
         try {
-            const response = await fetch('http://localhost:8080/api/admin/settings/visibility');
+            const response = await fetch('/api/admin/settings/visibility');
             if (!response.ok) throw new Error('Fetch failed');
             visibilityToggle.value = (await response.json()).visibility.toLowerCase();
         } catch (error) { console.error('Failed to fetch initial settings:', error); }
     }
     async function updateVisibility(newVisibility) {
         try {
-            await fetch('http://localhost:8080/api/admin/settings/visibility', {
+            await fetch('/api/admin/settings/visibility', {
                 method: 'POST', headers: { 'Content-Type': 'application/json' }, body: JSON.stringify({ visibility: newVisibility })
             });
         } catch (error) { console.error('Failed to update visibility:', error); }
@@ -968,7 +968,7 @@ privateMessageForm.addEventListener('submit', (event) => {
 
     // --- WebSocket Connection and Handlers ---
     function connectWebSocket() {
-        const socket = new SockJS('http://localhost:8080/ws');
+        const socket = new SockJS('/ws');
         stompClient = Stomp.over(socket);
         stompClient.connect({}, onConnected, () => console.error('WebSocket connection failed.'));
     }
@@ -1205,8 +1205,8 @@ privateMessageForm.addEventListener('submit', (event) => {
         try {
             // FIXED: Use full URL
             const [chatRes, fileRes] = await Promise.all([
-                fetch(`http://localhost:8080/api/admin/history/chat/${username}`),
-                fetch(`http://localhost:8080/api/admin/history/files/${username}`)
+                fetch(`/api/admin/history/chat/${username}`),
+                fetch(`/api/admin/history/files/${username}`)
             ]);
 
             if (!chatRes.ok || !fileRes.ok) {

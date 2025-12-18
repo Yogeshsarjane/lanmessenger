@@ -16,7 +16,8 @@ CREATE TABLE file_log (
                           stored_filename VARCHAR(255) NOT NULL UNIQUE,
                           sender VARCHAR(255) NOT NULL,
                           recipient VARCHAR(255) NOT NULL,
-                          timestamp TIMESTAMP NOT NULL
+                          timestamp TIMESTAMP NOT NULL,
+                          status VARCHAR(50) DEFAULT 'SENT' -- ✅ Add this line
 );
 
 -- Creates the table to log all chat messages
