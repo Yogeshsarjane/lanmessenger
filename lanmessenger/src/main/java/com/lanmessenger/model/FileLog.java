@@ -2,7 +2,6 @@ package com.lanmessenger.model;
 
 import jakarta.persistence.*;
 import java.time.LocalDateTime;
-import com.lanmessenger.model.MessageStatus;
 
 @Entity
 @Table(name = "file_log") // Explicitly set the table name
@@ -22,9 +21,6 @@ public class FileLog {
     private String sender;
     private String recipient;
     private LocalDateTime timestamp;
-
-    @Enumerated(EnumType.STRING)
-    private MessageStatus status; // ✅ Add this field
     // Getters and Setters for all fields...
 
     public Long getId() {
@@ -74,7 +70,4 @@ public class FileLog {
     public void setTimestamp(LocalDateTime timestamp) {
         this.timestamp = timestamp;
     }
-
-    public MessageStatus getStatus() { return status; }
-    public void setStatus(MessageStatus status) { this.status = status; }
 }

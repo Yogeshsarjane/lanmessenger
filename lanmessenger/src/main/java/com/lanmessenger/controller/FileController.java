@@ -1,8 +1,8 @@
 package com.lanmessenger.controller;
 
-import com.lanmessenger.model.FileLog;
-import com.lanmessenger.model.MessageStatus;
-import com.lanmessenger.repository.FileLogRepository;
+import com.lanmessenger.model.FileLog; // <-- IMPORT
+import com.lanmessenger.model.FileNotification;
+import com.lanmessenger.repository.FileLogRepository; // <-- IMPORT
 import com.lanmessenger.service.FileStorageService;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.core.io.Resource;
@@ -11,87 +11,59 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.messaging.simp.SimpMessagingTemplate;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
-
-import java.security.Principal; // ✅ Added
-import java.time.LocalDateTime;
-import java.util.List;          // ✅ Added
+import java.time.LocalDateTime; // <-- IMPORT
 
 @RestController
 @RequestMapping("/api/files")
 @Slf4j
 public class FileController {
 
+    // --- Declare all dependencies as final fields ---
     private final FileStorageService fileStorageService;
     private final SimpMessagingTemplate messagingTemplate;
-    private final FileLogRepository fileLogRepository;
+    private final FileLogRepository fileLogRepository; // <-- ADD THIS
 
+    // --- Use one constructor to inject everything (Best Practice) ---
     public FileController(FileStorageService fileStorageService,
                           SimpMessagingTemplate messagingTemplate,
-                          FileLogRepository fileLogRepository) {
+                          FileLogRepository fileLogRepository) { // <-- ADD THIS
         this.fileStorageService = fileStorageService;
         this.messagingTemplate = messagingTemplate;
-        this.fileLogRepository = fileLogRepository;
+        this.fileLogRepository = fileLogRepository; // <-- ADD THIS
     }
 
     @PostMapping("/upload")
-    public ResponseEntity<FileLog> uploadFile(@RequestParam("file") MultipartFile file,
-                                              @RequestParam("sender") String sender,
-                                              @RequestParam("recipient") String recipient) {
+    public ResponseEntity<String> uploadFile(@RequestParam("file") MultipartFile file,
+                                             @RequestParam("sender") String sender,
+                                             @RequestParam("recipient") String recipient) {
 
         // 1. Store the file on the server
         String storedFilename = fileStorageService.storeFile(file);
 
-        // 2. Create the Database Entry
-        FileLog fileLog = new FileLog(); // Unified variable name
-        fileLog.setSender(sender);
-        fileLog.setRecipient(recipient);
-        fileLog.setOriginalFilename(file.getOriginalFilename());
-        fileLog.setStoredFilename(storedFilename);
-        fileLog.setTimestamp(LocalDateTime.now());
+        // 2. Create and send the WebSocket notification
+        FileNotification notification = new FileNotification(storedFilename, file.getOriginalFilename(), sender);
+        messagingTemplate.convertAndSendToUser(recipient, "/queue/files", notification);
+        log.info("Sent file notification for {} to recipient: {}", file.getOriginalFilename(), recipient);
 
-        // 3. Set status to SENT (Pending) initially
-        fileLog.setStatus(MessageStatus.SENT);
+        // ✅ 3. CREATE AND SAVE THE FILE LOG
+        FileLog logEntry = new FileLog();
+        logEntry.setSender(sender);
+        logEntry.setRecipient(recipient);
+        logEntry.setOriginalFilename(file.getOriginalFilename());
+        logEntry.setStoredFilename(storedFilename); // Save the unique name
+        logEntry.setTimestamp(LocalDateTime.now());
+        fileLogRepository.save(logEntry);
 
-        // 4. Save to Database ONCE
-        FileLog savedLog = fileLogRepository.save(fileLog);
-
-        // 5. Notify the recipient via WebSocket
-        // We send the full 'savedLog' object so the frontend gets the ID and Status
-        messagingTemplate.convertAndSendToUser(
-                recipient, "/queue/files", savedLog);
-
-        log.info("File uploaded and notification sent. ID: {}", savedLog.getId());
-
-        // 6. Return the saved log object (Fixed return type mismatch)
-        return ResponseEntity.ok(savedLog);
+        return ResponseEntity.ok("File uploaded successfully.");
     }
 
     @GetMapping("/download/{fileId}")
     public ResponseEntity<Resource> downloadFile(@PathVariable String fileId) {
         Resource resource = fileStorageService.loadFileAsResource(fileId);
-        // Extract original name logic (or retrieve from DB if preferred)
-        String originalFilename = fileId.contains("_")
-                ? fileId.substring(fileId.indexOf("_") + 1)
-                : fileId;
+        String originalFilename = fileId.substring(fileId.indexOf("_") + 1);
 
         return ResponseEntity.ok()
                 .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=\"" + originalFilename + "\"")
                 .body(resource);
-    }
-
-    @GetMapping("/pending")
-    public ResponseEntity<List<FileLog>> getPendingFiles(Principal principal) {
-        String username = principal.getName();
-
-        // 1. Find undelivered files
-        List<FileLog> pendingFiles = fileLogRepository.findByRecipientAndStatus(username, MessageStatus.SENT);
-
-        // 2. Mark them as DELIVERED so they don't load again next time
-        for (FileLog file : pendingFiles) {
-            file.setStatus(MessageStatus.DELIVERED);
-        }
-        fileLogRepository.saveAll(pendingFiles);
-
-        return ResponseEntity.ok(pendingFiles);
     }
 }

@@ -528,6 +528,26 @@
     object-fit: cover; /* This is the magic property! */
 }
 
+        /* Online Users: Bold and Standard Color */
+.private-chat-users li.user-online {
+    font-weight: 600; /* Make text slightly bolder */
+    color: var(--text-primary);
+    border-left: 3px solid #28a745; /* Green bar on the left */
+    padding-left: 8px; /* Adjust padding to make room for the bar */
+}
+
+/* Offline Users: Greyed out */
+.private-chat-users li.user-offline {
+    color: #999; /* Grey text */
+    font-style: italic; /* Professional touch for offline status */
+    opacity: 0.8;
+}
+
+/* Ensure the list item layout handles the new border */
+.private-chat-users li {
+    transition: all 0.2s ease;
+}
+
     </style>
 </head>
 <body>
@@ -577,7 +597,7 @@
                 <div class="chat-panel-header">Private Chat</div>
                 <div class="private-chat-container">
                     <div class="private-chat-users">
-                        <h4 style="text-align: center;">Online Terminals</h4>
+                        <h4 style="text-align: center;">Terminals</h4>
                         <hr>
                         <ul id="private-chat-user-list" >
                         </ul>
@@ -875,33 +895,66 @@
         });
     }
 
-    // --- Message & User List Handlers ---
-    function onUserListReceived(payload) {
-        const users = JSON.parse(payload.body);
-        const otherOnlineUsers = users.filter(user => user.username !== username && (user.status === 'ONLINE' || user.status === 'UNSTABLE'));
+   // In both user_dashboard.html and admin_dashboard.html scripts
 
-        // Clear existing lists
+    // In user_dashboard.html
+
+function onUserListReceived(payload) {
+    let users = JSON.parse(payload.body);
+    const currentUsername = username; // Simplified for user side
+
+    // ✅ 1. SORTING LOGIC
+    const statusPriority = { 'ONLINE': 1, 'CONNECTING': 2, 'OFFLINE': 3 };
+    users.sort((a, b) => {
+        const priorityA = statusPriority[a.status] || 4;
+        const priorityB = statusPriority[b.status] || 4;
+        return priorityA - priorityB;
+    });
+
+    const otherUsers = users.filter(user => user.username !== currentUsername);
+
+    // --- Logic for Private Chat List ---
+    if (privateChatUserList) {
         privateChatUserList.innerHTML = '';
-        recipientSelect.innerHTML = '<option value="">-- Select a user --</option>';
-
-        // Populate both lists in a single loop
-        otherOnlineUsers.forEach(user => {
-            // Create the list item for the private chat panel
+        otherUsers.forEach(user => {
             const li = document.createElement('li');
             li.dataset.username = user.username;
             li.textContent = user.username;
             li.onclick = () => startPrivateChat(user.username);
-            privateChatUserList.appendChild(li);
 
-            // Create the option for the file sharing dropdown
+            if (user.status === 'ONLINE') {
+                li.classList.add('user-online');
+            } else if (user.status === 'OFFLINE') {
+                li.classList.add('user-offline');
+            }
+            privateChatUserList.appendChild(li);
+        });
+    }
+
+    // --- Logic for File Sharing Recipient Dropdown ---
+    if (recipientSelect) {
+        const onlineOrConnectingUsers = users.filter(user =>
+            user.username !== currentUsername && (user.status === 'ONLINE' || user.status === 'CONNECTING')
+        );
+        const selectedRecipient = recipientSelect.value;
+        recipientSelect.innerHTML = '<option value="">-- Select a user --</option>';
+
+        onlineOrConnectingUsers.forEach(user => {
             const option = document.createElement('option');
             option.value = user.username;
             option.textContent = user.username;
             recipientSelect.appendChild(option);
         });
 
+        if (recipientSelect.querySelector(`option[value="${selectedRecipient}"]`)) {
+            recipientSelect.value = selectedRecipient;
+        }
+    }
+
+    if (typeof updateActiveChatUser === 'function') {
         updateActiveChatUser();
     }
+}
 
     function onPublicMessageReceived(payload) {
         const message = JSON.parse(payload.body);
@@ -922,14 +975,15 @@
         if (currentPrivateChatTarget === sender) {
             displayPrivateMessage(message);
         } else {
-            // THIS IS THE LOGIC TO ADD THE INDICATOR
+            // SAFETY CHECK 1: Ensure the user list item exists
             const userListItem = document.querySelector(`.private-chat-users li[data-username="${sender}"]`);
             if (userListItem) {
-                userListItem.classList.add('unread-indicator'); // <-- ADD THIS LINE
+                userListItem.classList.add('unread-indicator');
             }
 
-            // This part for the sidebar notification is also correct
-            if (!navDashboard.classList.contains('active')) {
+            // SAFETY CHECK 2: Ensure the 'navDashboard' exists
+            // (This prevents the crash if navDashboard hasn't been found by JS yet)
+            if (typeof navDashboard !== 'undefined' && navDashboard && !navDashboard.classList.contains('active')) {
                 navDashboard.classList.add('has-unread');
             }
         }
